@@ -1,0 +1,56 @@
+GAMS 48.6.1  67fbb04b Jan 23, 2025          DAX-DAC arm 64bit/macOS - 09/24/25 23:25:35 Page 1
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+C o m p i l a t i o n
+
+
+   1  set i /ABX "Barrick Gold", FCX "Freeport McMoRan"/ ;
+   2   
+   3  parameter
+   4  c(i) "score investment attractiveness"
+   5  /
+   6  ABX 0.60,
+   7  FCX 0.70
+   8  / ;
+   9   
+  10  parameter r(i) "expected annual return"
+  11  /
+  12  ABX 0.10,
+  13  FCX 0.20
+  14  / ;
+  15   
+  16  scalar budget "Total budget to be invested" /500000/;
+  17   
+  18  positive variable X(i) "weight investment ratio";
+  19  variable portofolioreturn;
+  20  variable objectivemaxvalue;
+  21   
+  22  equation
+  23  eq_budget "Investment sum 1"
+  24  eq_portofolioreturn "expected return"
+  25  eq_objective "maximize score weighted to return"
+  26  ;
+  27   
+  28  eq_budget.. sum(i, X(i)) =e= 1 ;
+  29   
+  30  eq_portofolioreturn.. portofolioreturn =e= sum(i, X(i) * r(i)) ;
+  31   
+  32  eq_objective.. objectivemaxvalue =e= sum(i, c(i) * X(i) * r(i)) ;
+  33   
+  34  model simple_mining /all/ ;
+
+
+COMPILATION TIME     =        0.000 SECONDS      3 MB  48.6.1 67fbb04b DAX-DAC
+GAMS 48.6.1  67fbb04b Jan 23, 2025          DAX-DAC arm 64bit/macOS - 09/24/25 23:25:35 Page 2
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+E x e c u t i o n
+
+
+USER: Computational Economics EBGN 645               G250827|0002AO-GEN
+      Colorado School of Mines, Operations Research Department  DCE4628
+      License for teaching and research at degree granting institutions
+
+
+**** FILE SUMMARY
+
+Input      /Users/yudhajatmiko/Documents/GitHub/jatmiko_EBGN645/project/Optimization_Inv.gms
+Output     /Users/yudhajatmiko/Documents/GitHub/jatmiko_EBGN645/project/Optimization_Inv.lst

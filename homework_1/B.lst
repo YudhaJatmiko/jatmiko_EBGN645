@@ -1,0 +1,696 @@
+GAMS 48.6.1  67fbb04b Jan 23, 2025          DAX-DAC arm 64bit/macOS - 10/10/25 12:54:42 Page 1
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+C o m p i l a t i o n
+
+
+   1  set m /X1, X2/ ;
+   2  set b /yellow, blue, green, orange, purple/ ;
+   3   
+   4  parameter r(b) "--$/beans-- revenue per beans"
+   5  /
+   6  yellow 1,
+   7  blue 1.05,
+   8  green 1.07,
+   9  orange 0.95,
+  10  purple 0.9
+  11  / ;
+  12   
+  13  scalar hours_per_week "--hours/week-- available hours per week" /40/ ;
+  14  scalar beans_per_hour "--beans/hour-- production rate" /100/ ;
+  15  scalar capacity "--beans/week-- capacity per machine" ;
+  16  capacity = hours_per_week * beans_per_hour ;
+  17   
+  18  scalar sw_equal /0/ ;
+  19  scalar sw_restrict /0/ ;
+  20   
+  21  set m_b(m,b) "valid machine-bean combinations" ;
+  22  m_b(m,b) = yes ;
+  23   
+  24  positive variable Q(m,b) "--beans/week-- production quantity" ;
+  25  variable profit ;
+  26   
+  27  equation
+  28  eq_objfn "objective function",
+  29  eq_capacity(m) "machine capacity constraint"
+  30  ;
+  31   
+  32  eq_objfn.. profit =e= sum((m,b)$m_b(m,b), r(b) * Q(m,b)) ;
+  33   
+  34  eq_capacity(m).. sum(b$m_b(m,b), Q(m,b)) =l= capacity ;
+  35   
+  36  alias(b, bb) ;
+  37   
+  38  equation eq_upper(b,bb), eq_lower(b,bb) ;
+  39   
+  40  eq_upper(b,bb)$(ord(b) lt ord(bb) and sw_equal)..
+  41      sum(m$m_b(m,b), Q(m,b)) =l= 1.06 * sum(m$m_b(m,bb), Q(m,bb)) ;
+  42   
+  43  eq_lower(b,bb)$(ord(b) lt ord(bb) and sw_equal)..
+  44      sum(m$m_b(m,b), Q(m,b)) =g= 0.94 * sum(m$m_b(m,bb), Q(m,bb)) ;
+  45   
+  46  model base /eq_objfn, eq_capacity/ ;
+  47  model equal /eq_objfn, eq_capacity, eq_upper, eq_lower/ ;
+  48   
+  49  solve base using lp maximizing profit ;
+  50  display Q.l, profit.l ;
+  51   
+  52  sw_equal = 1 ;
+  53  solve equal using lp maximizing profit ;
+  54  display Q.l, profit.l ;
+  55   
+  56  sw_restrict = 1 ;
+  57  m_b(m,b) = no ;
+  58  m_b("X1","yellow") = yes ;
+  59  m_b("X1","blue") = yes ;
+  60  m_b("X1","green") = yes ;
+  61  m_b("X2","yellow") = yes ;
+  62  m_b("X2","orange") = yes ;
+  63  m_b("X2","purple") = yes ;
+  64   
+  65  model restrict /eq_objfn, eq_capacity, eq_upper, eq_lower/ ;
+  66  solve restrict using lp maximizing profit ;
+  67  display Q.l, profit.l ;
+
+
+COMPILATION TIME     =        0.000 SECONDS      3 MB  48.6.1 67fbb04b DAX-DAC
+GAMS 48.6.1  67fbb04b Jan 23, 2025          DAX-DAC arm 64bit/macOS - 10/10/25 12:54:42 Page 2
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+Equation Listing    SOLVE base Using LP From line 49
+
+
+---- eq_objfn  =E=  objective function
+
+eq_objfn..  - Q(X1,yellow) - 1.05*Q(X1,blue) - 1.07*Q(X1,green) - 0.95*Q(X1,orange) - 0.9*Q(X1,purple) - Q(X2,yellow) - 1.05*Q(X2,blue) - 1.07*Q(X2,green) - 0.95*Q(X2,orange) - 0.9*Q(X2,purple) + profit =E= 0 ; (LHS = 0)
+     
+
+---- eq_capacity  =L=  machine capacity constraint
+
+eq_capacity(X1)..  Q(X1,yellow) + Q(X1,blue) + Q(X1,green) + Q(X1,orange) + Q(X1,purple) =L= 4000 ; (LHS = 0)
+     
+eq_capacity(X2)..  Q(X2,yellow) + Q(X2,blue) + Q(X2,green) + Q(X2,orange) + Q(X2,purple) =L= 4000 ; (LHS = 0)
+     
+GAMS 48.6.1  67fbb04b Jan 23, 2025          DAX-DAC arm 64bit/macOS - 10/10/25 12:54:42 Page 3
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+Column Listing      SOLVE base Using LP From line 49
+
+
+---- Q  --beans/week-- production quantity
+
+Q(X1,yellow)
+                (.LO, .L, .UP, .M = 0, 0, +INF, 0)
+       -1       eq_objfn
+        1       eq_capacity(X1)
+
+Q(X1,blue)
+                (.LO, .L, .UP, .M = 0, 0, +INF, 0)
+       -1.05    eq_objfn
+        1       eq_capacity(X1)
+
+Q(X1,green)
+                (.LO, .L, .UP, .M = 0, 0, +INF, 0)
+       -1.07    eq_objfn
+        1       eq_capacity(X1)
+
+REMAINING 7 ENTRIES SKIPPED
+
+---- profit  
+
+profit
+                (.LO, .L, .UP, .M = -INF, 0, +INF, 0)
+        1       eq_objfn
+
+GAMS 48.6.1  67fbb04b Jan 23, 2025          DAX-DAC arm 64bit/macOS - 10/10/25 12:54:42 Page 4
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+Range Statistics    SOLVE base Using LP From line 49
+
+
+RANGE STATISTICS (ABSOLUTE NON-ZERO FINITE VALUES)
+
+RHS       [min, max] : [ 4.000E+03, 4.000E+03] - Zero values observed as well
+Bound     [min, max] : [        NA,        NA] - Zero values observed as well
+Matrix    [min, max] : [ 9.000E-01, 1.070E+00]
+
+GAMS 48.6.1  67fbb04b Jan 23, 2025          DAX-DAC arm 64bit/macOS - 10/10/25 12:54:42 Page 5
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+Model Statistics    SOLVE base Using LP From line 49
+
+
+MODEL STATISTICS
+
+BLOCKS OF EQUATIONS           2     SINGLE EQUATIONS            3
+BLOCKS OF VARIABLES           2     SINGLE VARIABLES           11
+NON ZERO ELEMENTS            21
+
+
+GENERATION TIME      =        0.007 SECONDS      4 MB  48.6.1 67fbb04b DAX-DAC
+GAMS 48.6.1  67fbb04b Jan 23, 2025          DAX-DAC arm 64bit/macOS - 10/10/25 12:54:42 Page 6
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+Solution Report     SOLVE base Using LP From line 49
+
+
+               S O L V E      S U M M A R Y
+
+     MODEL   base                OBJECTIVE  profit
+     TYPE    LP                  DIRECTION  MAXIMIZE
+     SOLVER  CPLEX               FROM LINE  49
+
+**** SOLVER STATUS     1 Normal Completion
+**** MODEL STATUS      1 Optimal
+**** OBJECTIVE VALUE             8560.0000
+
+ RESOURCE USAGE, LIMIT          0.007 10000000000.000
+ ITERATION COUNT, LIMIT         0    2147483647
+--- GAMS/CPLEX licensed for continuous and discrete problems.
+--- GMO setup time: 0.00s
+--- GMO memory 0.50 Mb (peak 0.50 Mb)
+--- Dictionary memory 0.00 Mb
+--- Cplex 22.1.1.0 link memory 0.00 Mb (peak 0.00 Mb)
+--- Starting Cplex
+
+
+--- LP status (1): optimal.
+--- Cplex Time: 0.01sec (det. 0.00 ticks)
+
+
+Optimal solution found
+Objective:         8560.000000
+
+
+                           LOWER          LEVEL          UPPER         MARGINAL
+
+---- EQU eq_objfn            .              .              .             1.0000      
+
+  eq_objfn  objective function
+
+---- EQU eq_capacity  machine capacity constraint
+
+          LOWER          LEVEL          UPPER         MARGINAL
+
+X1        -INF         4000.0000      4000.0000         1.0700      
+X2        -INF         4000.0000      4000.0000         1.0700      
+
+---- VAR Q  --beans/week-- production quantity
+
+                 LOWER          LEVEL          UPPER         MARGINAL
+
+X1.yellow          .              .            +INF           -0.0700      
+X1.blue            .              .            +INF           -0.0200      
+X1.green           .          4000.0000        +INF             .          
+X1.orange          .              .            +INF           -0.1200      
+X1.purple          .              .            +INF           -0.1700      
+X2.yellow          .              .            +INF           -0.0700      
+X2.blue            .              .            +INF           -0.0200      
+X2.green           .          4000.0000        +INF             .          
+X2.orange          .              .            +INF           -0.1200      
+X2.purple          .              .            +INF           -0.1700      
+
+                           LOWER          LEVEL          UPPER         MARGINAL
+
+---- VAR profit            -INF         8560.0000        +INF             .          
+
+
+**** REPORT SUMMARY :        0     NONOPT
+                             0 INFEASIBLE
+                             0  UNBOUNDED
+GAMS 48.6.1  67fbb04b Jan 23, 2025          DAX-DAC arm 64bit/macOS - 10/10/25 12:54:42 Page 7
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+E x e c u t i o n
+
+
+----     50 VARIABLE Q.L  --beans/week-- production quantity
+
+         green
+
+X1    4000.000
+X2    4000.000
+
+
+----     50 VARIABLE profit.L              =     8560.000  
+GAMS 48.6.1  67fbb04b Jan 23, 2025          DAX-DAC arm 64bit/macOS - 10/10/25 12:54:42 Page 8
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+Equation Listing    SOLVE equal Using LP From line 53
+
+
+---- eq_objfn  =E=  objective function
+
+eq_objfn..  - Q(X1,yellow) - 1.05*Q(X1,blue) - 1.07*Q(X1,green) - 0.95*Q(X1,orange) - 0.9*Q(X1,purple) - Q(X2,yellow) - 1.05*Q(X2,blue) - 1.07*Q(X2,green) - 0.95*Q(X2,orange) - 0.9*Q(X2,purple) + profit =E= 0 ; (LHS = 0)
+     
+
+---- eq_capacity  =L=  machine capacity constraint
+
+eq_capacity(X1)..  Q(X1,yellow) + Q(X1,blue) + Q(X1,green) + Q(X1,orange) + Q(X1,purple) =L= 4000 ; (LHS = 4000)
+     
+eq_capacity(X2)..  Q(X2,yellow) + Q(X2,blue) + Q(X2,green) + Q(X2,orange) + Q(X2,purple) =L= 4000 ; (LHS = 4000)
+     
+
+---- eq_upper  =L=  
+
+eq_upper(yellow,blue)..  Q(X1,yellow) - 1.06*Q(X1,blue) + Q(X2,yellow) - 1.06*Q(X2,blue) =L= 0 ; (LHS = 0)
+     
+eq_upper(yellow,green)..  Q(X1,yellow) - 1.06*Q(X1,green) + Q(X2,yellow) - 1.06*Q(X2,green) =L= 0 ; (LHS = -8480)
+     
+eq_upper(yellow,orange)..  Q(X1,yellow) - 1.06*Q(X1,orange) + Q(X2,yellow) - 1.06*Q(X2,orange) =L= 0 ; (LHS = 0)
+     
+REMAINING 7 ENTRIES SKIPPED
+
+
+---- eq_lower  =G=  
+
+eq_lower(yellow,blue)..  Q(X1,yellow) - 0.94*Q(X1,blue) + Q(X2,yellow) - 0.94*Q(X2,blue) =G= 0 ; (LHS = 0)
+     
+eq_lower(yellow,green)..  Q(X1,yellow) - 0.94*Q(X1,green) + Q(X2,yellow) - 0.94*Q(X2,green) =G= 0 ; (LHS = -7520, INFES = 7520 ****)
+     
+eq_lower(yellow,orange)..  Q(X1,yellow) - 0.94*Q(X1,orange) + Q(X2,yellow) - 0.94*Q(X2,orange) =G= 0 ; (LHS = 0)
+     
+REMAINING 7 ENTRIES SKIPPED
+
+GAMS 48.6.1  67fbb04b Jan 23, 2025          DAX-DAC arm 64bit/macOS - 10/10/25 12:54:42 Page 9
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+Column Listing      SOLVE equal Using LP From line 53
+
+
+---- Q  --beans/week-- production quantity
+
+Q(X1,yellow)
+                (.LO, .L, .UP, .M = 0, 0, +INF, -0.0700000000000001)
+       -1       eq_objfn
+        1       eq_capacity(X1)
+        1       eq_upper(yellow,blue)
+        1       eq_upper(yellow,green)
+        1       eq_upper(yellow,orange)
+        1       eq_upper(yellow,purple)
+        1       eq_lower(yellow,blue)
+        1       eq_lower(yellow,green)
+        1       eq_lower(yellow,orange)
+        1       eq_lower(yellow,purple)
+
+Q(X1,blue)
+                (.LO, .L, .UP, .M = 0, 0, +INF, -0.02)
+       -1.05    eq_objfn
+        1       eq_capacity(X1)
+       -1.06    eq_upper(yellow,blue)
+        1       eq_upper(blue,green)
+        1       eq_upper(blue,orange)
+        1       eq_upper(blue,purple)
+       -0.94    eq_lower(yellow,blue)
+        1       eq_lower(blue,green)
+        1       eq_lower(blue,orange)
+        1       eq_lower(blue,purple)
+
+Q(X1,green)
+                (.LO, .L, .UP, .M = 0, 4000, +INF, 0)
+       -1.07    eq_objfn
+        1       eq_capacity(X1)
+       -1.06    eq_upper(yellow,green)
+       -1.06    eq_upper(blue,green)
+        1       eq_upper(green,orange)
+        1       eq_upper(green,purple)
+       -0.94    eq_lower(yellow,green)
+       -0.94    eq_lower(blue,green)
+        1       eq_lower(green,orange)
+        1       eq_lower(green,purple)
+
+REMAINING 7 ENTRIES SKIPPED
+
+---- profit  
+
+profit
+                (.LO, .L, .UP, .M = -INF, 8560, +INF, 0)
+        1       eq_objfn
+
+GAMS 48.6.1  67fbb04b Jan 23, 2025          DAX-DAC arm 64bit/macOS - 10/10/25 12:54:42 Page 10
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+Range Statistics    SOLVE equal Using LP From line 53
+
+
+RANGE STATISTICS (ABSOLUTE NON-ZERO FINITE VALUES)
+
+RHS       [min, max] : [ 4.000E+03, 4.000E+03] - Zero values observed as well
+Bound     [min, max] : [        NA,        NA] - Zero values observed as well
+Matrix    [min, max] : [ 9.000E-01, 1.070E+00]
+
+GAMS 48.6.1  67fbb04b Jan 23, 2025          DAX-DAC arm 64bit/macOS - 10/10/25 12:54:42 Page 11
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+Model Statistics    SOLVE equal Using LP From line 53
+
+
+MODEL STATISTICS
+
+BLOCKS OF EQUATIONS           4     SINGLE EQUATIONS           23
+BLOCKS OF VARIABLES           2     SINGLE VARIABLES           11
+NON ZERO ELEMENTS           101
+
+
+GENERATION TIME      =        0.002 SECONDS      4 MB  48.6.1 67fbb04b DAX-DAC
+GAMS 48.6.1  67fbb04b Jan 23, 2025          DAX-DAC arm 64bit/macOS - 10/10/25 12:54:42 Page 12
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+Solution Report     SOLVE equal Using LP From line 53
+
+
+               S O L V E      S U M M A R Y
+
+     MODEL   equal               OBJECTIVE  profit
+     TYPE    LP                  DIRECTION  MAXIMIZE
+     SOLVER  CPLEX               FROM LINE  53
+
+**** SOLVER STATUS     1 Normal Completion
+**** MODEL STATUS      1 Optimal
+**** OBJECTIVE VALUE             7964.7876
+
+ RESOURCE USAGE, LIMIT          0.005 10000000000.000
+ ITERATION COUNT, LIMIT         7    2147483647
+--- GAMS/CPLEX licensed for continuous and discrete problems.
+--- GMO setup time: 0.00s
+--- GMO memory 0.50 Mb (peak 0.50 Mb)
+--- Dictionary memory 0.00 Mb
+--- Cplex 22.1.1.0 link memory 0.00 Mb (peak 0.00 Mb)
+--- Starting Cplex
+
+
+--- LP status (1): optimal.
+--- Cplex Time: 0.01sec (det. 0.10 ticks)
+
+
+Optimal solution found
+Objective:         7964.787645
+
+
+                           LOWER          LEVEL          UPPER         MARGINAL
+
+---- EQU eq_objfn            .              .              .             1.0000      
+
+  eq_objfn  objective function
+
+---- EQU eq_capacity  machine capacity constraint
+
+          LOWER          LEVEL          UPPER         MARGINAL
+
+X1        -INF         4000.0000      4000.0000         0.9956      
+X2        -INF         4000.0000      4000.0000         0.9956      
+
+---- EQU eq_upper  
+
+                     LOWER          LEVEL          UPPER         MARGINAL
+
+yellow.blue          -INF          -98.2239          .              .          
+yellow.green         -INF          -98.2239          .              .          
+yellow.orange        -INF             .              .             0.0044      
+yellow.purple        -INF      -6.82121E-13          .              .          
+blue  .green         -INF          -98.2239          .              .          
+blue  .orange        -INF      6.821210E-13          .              .          
+blue  .purple        -INF             .              .             0.0544      
+green .orange        -INF             .              .             0.0386      
+green .purple        -INF             .              .             0.0358      
+orange.purple        -INF          -92.6641          .              .          
+
+---- EQU eq_lower  
+
+                     LOWER          LEVEL          UPPER         MARGINAL
+
+yellow.blue            .            98.2239        +INF             .          
+yellow.green           .            98.2239        +INF             .          
+yellow.orange          .           185.3282        +INF             .          
+yellow.purple          .           185.3282        +INF             .          
+blue  .green           .            98.2239        +INF             .          
+blue  .orange          .           185.3282        +INF             .          
+blue  .purple          .           185.3282        +INF             .          
+green .orange          .           185.3282        +INF             .          
+green .purple          .           185.3282        +INF             .          
+orange.purple          .            92.6641        +INF             .          
+
+---- VAR Q  --beans/week-- production quantity
+
+                 LOWER          LEVEL          UPPER         MARGINAL
+
+X1.yellow          .              .            +INF            EPS         
+X1.blue            .          1637.0656        +INF             .          
+X1.green           .           818.5328        +INF             .          
+X1.orange          .          1544.4015        +INF             .          
+X1.purple          .              .            +INF      -2.15106E-16      
+X2.yellow          .          1637.0656        +INF             .          
+X2.blue            .              .            +INF            EPS         
+X2.green           .           818.5328        +INF             .          
+X2.orange          .              .            +INF      1.942890E-16      
+X2.purple          .          1544.4015        +INF             .          
+
+                           LOWER          LEVEL          UPPER         MARGINAL
+
+---- VAR profit            -INF         7964.7876        +INF             .          
+
+
+**** REPORT SUMMARY :        0     NONOPT
+                             0 INFEASIBLE
+                             0  UNBOUNDED
+GAMS 48.6.1  67fbb04b Jan 23, 2025          DAX-DAC arm 64bit/macOS - 10/10/25 12:54:42 Page 13
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+E x e c u t i o n
+
+
+----     54 VARIABLE Q.L  --beans/week-- production quantity
+
+        yellow        blue       green      orange      purple
+
+X1                1637.066     818.533    1544.402
+X2    1637.066                 818.533                1544.402
+
+
+----     54 VARIABLE profit.L              =     7964.788  
+GAMS 48.6.1  67fbb04b Jan 23, 2025          DAX-DAC arm 64bit/macOS - 10/10/25 12:54:42 Page 14
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+Equation Listing    SOLVE restrict Using LP From line 66
+
+
+---- eq_objfn  =E=  objective function
+
+eq_objfn..  - Q(X1,yellow) - 1.05*Q(X1,blue) - 1.07*Q(X1,green) - Q(X2,yellow) - 0.95*Q(X2,orange) - 0.9*Q(X2,purple) + profit =E= 0 ; (LHS = 2343.01158301158, INFES = 2343.01158301158 ****)
+     
+
+---- eq_capacity  =L=  machine capacity constraint
+
+eq_capacity(X1)..  Q(X1,yellow) + Q(X1,blue) + Q(X1,green) =L= 4000 ; (LHS = 2455.59845559846)
+     
+eq_capacity(X2)..  Q(X2,yellow) + Q(X2,orange) + Q(X2,purple) =L= 4000 ; (LHS = 3181.46718146718)
+     
+
+---- eq_upper  =L=  
+
+eq_upper(yellow,blue)..  Q(X1,yellow) - 1.06*Q(X1,blue) + Q(X2,yellow) =L= 0 ; (LHS = -98.2239382239391)
+     
+eq_upper(yellow,green)..  Q(X1,yellow) - 1.06*Q(X1,green) + Q(X2,yellow) =L= 0 ; (LHS = 769.420849420849, INFES = 769.420849420849 ****)
+     
+eq_upper(yellow,orange)..  Q(X1,yellow) + Q(X2,yellow) - 1.06*Q(X2,orange) =L= 0 ; (LHS = 1637.06563706564, INFES = 1637.06563706564 ****)
+     
+REMAINING 7 ENTRIES SKIPPED
+
+
+---- eq_lower  =G=  
+
+eq_lower(yellow,blue)..  Q(X1,yellow) - 0.94*Q(X1,blue) + Q(X2,yellow) =G= 0 ; (LHS = 98.2239382239377)
+     
+eq_lower(yellow,green)..  Q(X1,yellow) - 0.94*Q(X1,green) + Q(X2,yellow) =G= 0 ; (LHS = 867.644787644787)
+     
+eq_lower(yellow,orange)..  Q(X1,yellow) + Q(X2,yellow) - 0.94*Q(X2,orange) =G= 0 ; (LHS = 1637.06563706564)
+     
+REMAINING 7 ENTRIES SKIPPED
+
+GAMS 48.6.1  67fbb04b Jan 23, 2025          DAX-DAC arm 64bit/macOS - 10/10/25 12:54:42 Page 15
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+Column Listing      SOLVE restrict Using LP From line 66
+
+
+---- Q  --beans/week-- production quantity
+
+Q(X1,yellow)
+                (.LO, .L, .UP, .M = 0, 0, +INF, EPS)
+       -1       eq_objfn
+        1       eq_capacity(X1)
+        1       eq_upper(yellow,blue)
+        1       eq_upper(yellow,green)
+        1       eq_upper(yellow,orange)
+        1       eq_upper(yellow,purple)
+        1       eq_lower(yellow,blue)
+        1       eq_lower(yellow,green)
+        1       eq_lower(yellow,orange)
+        1       eq_lower(yellow,purple)
+
+Q(X1,blue)
+                (.LO, .L, .UP, .M = 0, 1637.06563706564, +INF, 0)
+       -1.05    eq_objfn
+        1       eq_capacity(X1)
+       -1.06    eq_upper(yellow,blue)
+        1       eq_upper(blue,green)
+        1       eq_upper(blue,orange)
+        1       eq_upper(blue,purple)
+       -0.94    eq_lower(yellow,blue)
+        1       eq_lower(blue,green)
+        1       eq_lower(blue,orange)
+        1       eq_lower(blue,purple)
+
+Q(X1,green)
+                (.LO, .L, .UP, .M = 0, 818.532818532819, +INF, 0)
+       -1.07    eq_objfn
+        1       eq_capacity(X1)
+       -1.06    eq_upper(yellow,green)
+       -1.06    eq_upper(blue,green)
+        1       eq_upper(green,orange)
+        1       eq_upper(green,purple)
+       -0.94    eq_lower(yellow,green)
+       -0.94    eq_lower(blue,green)
+        1       eq_lower(green,orange)
+        1       eq_lower(green,purple)
+
+REMAINING 3 ENTRIES SKIPPED
+
+---- profit  
+
+profit
+                (.LO, .L, .UP, .M = -INF, 7964.78764478765, +INF, 0)
+        1       eq_objfn
+
+GAMS 48.6.1  67fbb04b Jan 23, 2025          DAX-DAC arm 64bit/macOS - 10/10/25 12:54:42 Page 16
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+Range Statistics    SOLVE restrict Using LP From line 66
+
+
+RANGE STATISTICS (ABSOLUTE NON-ZERO FINITE VALUES)
+
+RHS       [min, max] : [ 4.000E+03, 4.000E+03] - Zero values observed as well
+Bound     [min, max] : [        NA,        NA] - Zero values observed as well
+Matrix    [min, max] : [ 9.000E-01, 1.070E+00]
+
+GAMS 48.6.1  67fbb04b Jan 23, 2025          DAX-DAC arm 64bit/macOS - 10/10/25 12:54:42 Page 17
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+Model Statistics    SOLVE restrict Using LP From line 66
+
+
+MODEL STATISTICS
+
+BLOCKS OF EQUATIONS           4     SINGLE EQUATIONS           23
+BLOCKS OF VARIABLES           2     SINGLE VARIABLES            7
+NON ZERO ELEMENTS            61
+
+
+GENERATION TIME      =        0.001 SECONDS      4 MB  48.6.1 67fbb04b DAX-DAC
+GAMS 48.6.1  67fbb04b Jan 23, 2025          DAX-DAC arm 64bit/macOS - 10/10/25 12:54:42 Page 18
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+Solution Report     SOLVE restrict Using LP From line 66
+
+
+               S O L V E      S U M M A R Y
+
+     MODEL   restrict            OBJECTIVE  profit
+     TYPE    LP                  DIRECTION  MAXIMIZE
+     SOLVER  CPLEX               FROM LINE  66
+
+**** SOLVER STATUS     1 Normal Completion
+**** MODEL STATUS      1 Optimal
+**** OBJECTIVE VALUE             7964.7876
+
+ RESOURCE USAGE, LIMIT          0.001 10000000000.000
+ ITERATION COUNT, LIMIT         9    2147483647
+--- GAMS/CPLEX licensed for continuous and discrete problems.
+--- GMO setup time: 0.00s
+--- GMO memory 0.50 Mb (peak 0.50 Mb)
+--- Dictionary memory 0.00 Mb
+--- Cplex 22.1.1.0 link memory 0.00 Mb (peak 0.00 Mb)
+--- Starting Cplex
+
+
+--- LP status (1): optimal.
+--- Cplex Time: 0.00sec (det. 0.09 ticks)
+
+
+Optimal solution found
+Objective:         7964.787645
+
+
+                           LOWER          LEVEL          UPPER         MARGINAL
+
+---- EQU eq_objfn            .              .              .             1.0000      
+
+  eq_objfn  objective function
+
+---- EQU eq_capacity  machine capacity constraint
+
+          LOWER          LEVEL          UPPER         MARGINAL
+
+X1        -INF         4000.0000      4000.0000         0.9956      
+X2        -INF         4000.0000      4000.0000         0.9956      
+
+---- EQU eq_upper  
+
+                     LOWER          LEVEL          UPPER         MARGINAL
+
+yellow.blue          -INF          -98.2239          .              .          
+yellow.green         -INF          -98.2239          .              .          
+yellow.orange        -INF      -4.54747E-13          .              .          
+yellow.purple        -INF             .              .             0.0044      
+blue  .green         -INF          -98.2239          .              .          
+blue  .orange        -INF      -4.54747E-13          .              .          
+blue  .purple        -INF             .              .             0.0544      
+green .orange        -INF             .              .             0.0430      
+green .purple        -INF             .              .             0.0314      
+orange.purple        -INF          -92.6641          .              .          
+
+---- EQU eq_lower  
+
+                     LOWER          LEVEL          UPPER         MARGINAL
+
+yellow.blue            .            98.2239        +INF             .          
+yellow.green           .            98.2239        +INF             .          
+yellow.orange          .           185.3282        +INF             .          
+yellow.purple          .           185.3282        +INF             .          
+blue  .green           .            98.2239        +INF             .          
+blue  .orange          .           185.3282        +INF             .          
+blue  .purple          .           185.3282        +INF             .          
+green .orange          .           185.3282        +INF             .          
+green .purple          .           185.3282        +INF             .          
+orange.purple          .            92.6641        +INF             .          
+
+---- VAR Q  --beans/week-- production quantity
+
+                 LOWER          LEVEL          UPPER         MARGINAL
+
+X1.yellow          .           725.8687        +INF             .          
+X1.blue            .          1637.0656        +INF             .          
+X1.green           .          1637.0656        +INF             .          
+X2.yellow          .           911.1969        +INF             .          
+X2.orange          .          1544.4015        +INF             .          
+X2.purple          .          1544.4015        +INF             .          
+
+                           LOWER          LEVEL          UPPER         MARGINAL
+
+---- VAR profit            -INF         7964.7876        +INF             .          
+
+
+**** REPORT SUMMARY :        0     NONOPT
+                             0 INFEASIBLE
+                             0  UNBOUNDED
+GAMS 48.6.1  67fbb04b Jan 23, 2025          DAX-DAC arm 64bit/macOS - 10/10/25 12:54:42 Page 19
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+E x e c u t i o n
+
+
+----     67 VARIABLE Q.L  --beans/week-- production quantity
+
+        yellow        blue       green      orange      purple
+
+X1     725.869    1637.066    1637.066    1544.402
+X2     911.197                 818.533    1544.402    1544.402
+
+
+----     67 VARIABLE profit.L              =     7964.788  
+
+
+EXECUTION TIME       =        0.141 SECONDS      4 MB  48.6.1 67fbb04b DAX-DAC
+
+
+USER: Computational Economics EBGN 645               G250827|0002AO-GEN
+      Colorado School of Mines, Operations Research Department  DCE4628
+      License for teaching and research at degree granting institutions
+
+
+**** FILE SUMMARY
+
+Input      /Users/yudhajatmiko/Documents/GitHub/jatmiko_EBGN645/homework_1/B.gms
+Output     /Users/yudhajatmiko/Documents/GitHub/jatmiko_EBGN645/homework_1/B.lst

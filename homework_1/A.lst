@@ -1,0 +1,382 @@
+GAMS 48.6.1  67fbb04b Jan 23, 2025          DAX-DAC arm 64bit/macOS - 10/06/25 20:59:12 Page 1
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+C o m p i l a t i o n
+
+
+   1   
+   2  set i /roll,croissant,bread/ ;
+   3   
+   4  parameter
+   5  r(i) "--$/item-- revenue per unit sold"
+   6  /
+   7  roll 2.25,
+   8  croissant 5.5,
+   9  bread 10
+  10  / ;
+  11   
+  12  parameter c(i) "--$/item-- cost per unit sold"
+  13  /
+  14  roll 1.5,
+  15  croissant 2,
+  16  bread 5
+  17  / ;
+  18   
+  19  parameter h(i) "--hours/item-- hours required per item sold"
+  20  /
+  21  roll 1.5,
+  22  croissant 2.25,
+  23  bread 5
+  24  / ;
+  25   
+  26  scalar hbar "--hours-- total hours in a week" /40/;
+  27   
+  28  positive variable X(i) "--units-- production of units";
+  29  variable profit ;
+  30   
+  31  equation
+  32  eq_objfn "target of our optimization",
+  33  eq_hourlimit "cant work more than 40 hours per week"
+  34  ;
+  35   
+  36  eq_objfn.. profit =e= sum(i,(r(i)-c(i)) * X(i)) ;
+  37   
+  38  eq_hourlimit.. sum(i, h(i) * X(i)) =l= hbar ;
+  39  * =e= "equal to"
+  40  * =g= "greater than"
+  41  * =l= "less than"
+  42   
+  43  scalar sw_combo /0/ ;
+  44   
+  45  equation eq_combo;
+  46  eq_combo$sw_combo.. X("croissant") =e= X("roll") ;
+  47   
+  48  model benny /all/ ;
+  49   
+  50  sw_combo = 0 ;
+  51  solve benny using lp maximizing profit ;
+  52  display "COMBO 0 RESULTS:", X.l, profit.l ;
+  53   
+  54  sw_combo = 1 ;
+  55  solve benny using lp maximizing profit ;
+  56  display "COMBO 1 RESULTS:", X.l, profit.l ;
+  57   
+  58  execute_unload 'benny.gdx' ;
+  59   
+  60  parameter rep(i) ;
+  61  rep(i) = X.l(i) ;
+  62   
+EXIT /Users/yudhajatmiko/Documents/GitHub/jatmiko_EBGN645/homework_1/A.gms
+GAMS 48.6.1  67fbb04b Jan 23, 2025          DAX-DAC arm 64bit/macOS - 10/06/25 20:59:12 Page 2
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+Include File Summary
+
+
+   SEQ   GLOBAL TYPE      PARENT   LOCAL  FILENAME
+
+     1        1 INPUT          0       0  /Users/yudhajatmiko/Documents/GitHub/jatmiko_EBGN645/homework_1/A.gms
+     2       63 EXIT           1      63  /Users/yudhajatmiko/Documents/GitHub/jatmiko_EBGN645/homework_1/A.gms
+
+
+COMPILATION TIME     =        0.000 SECONDS      3 MB  48.6.1 67fbb04b DAX-DAC
+GAMS 48.6.1  67fbb04b Jan 23, 2025          DAX-DAC arm 64bit/macOS - 10/06/25 20:59:12 Page 3
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+Equation Listing    SOLVE benny Using LP From line 51
+
+
+---- eq_objfn  =E=  target of our optimization
+
+eq_objfn..  - 0.75*X(roll) - 3.5*X(croissant) - 5*X(bread) + profit =E= 0 ; (LHS = 0)
+     
+
+---- eq_hourlimit  =L=  cant work more than 40 hours per week
+
+eq_hourlimit..  1.5*X(roll) + 2.25*X(croissant) + 5*X(bread) =L= 40 ; (LHS = 0)
+     
+
+---- eq_combo  =E=  
+
+                NONE
+
+GAMS 48.6.1  67fbb04b Jan 23, 2025          DAX-DAC arm 64bit/macOS - 10/06/25 20:59:12 Page 4
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+Column Listing      SOLVE benny Using LP From line 51
+
+
+---- X  --units-- production of units
+
+X(roll)
+                (.LO, .L, .UP, .M = 0, 0, +INF, 0)
+       -0.75    eq_objfn
+        1.5     eq_hourlimit
+
+X(croissant)
+                (.LO, .L, .UP, .M = 0, 0, +INF, 0)
+       -3.5     eq_objfn
+        2.25    eq_hourlimit
+
+X(bread)
+                (.LO, .L, .UP, .M = 0, 0, +INF, 0)
+       -5       eq_objfn
+        5       eq_hourlimit
+
+
+---- profit  
+
+profit
+                (.LO, .L, .UP, .M = -INF, 0, +INF, 0)
+        1       eq_objfn
+
+GAMS 48.6.1  67fbb04b Jan 23, 2025          DAX-DAC arm 64bit/macOS - 10/06/25 20:59:12 Page 5
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+Range Statistics    SOLVE benny Using LP From line 51
+
+
+RANGE STATISTICS (ABSOLUTE NON-ZERO FINITE VALUES)
+
+RHS       [min, max] : [ 4.000E+01, 4.000E+01] - Zero values observed as well
+Bound     [min, max] : [        NA,        NA] - Zero values observed as well
+Matrix    [min, max] : [ 7.500E-01, 5.000E+00]
+
+GAMS 48.6.1  67fbb04b Jan 23, 2025          DAX-DAC arm 64bit/macOS - 10/06/25 20:59:12 Page 6
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+Model Statistics    SOLVE benny Using LP From line 51
+
+
+MODEL STATISTICS
+
+BLOCKS OF EQUATIONS           3     SINGLE EQUATIONS            2
+BLOCKS OF VARIABLES           2     SINGLE VARIABLES            4
+NON ZERO ELEMENTS             7
+
+
+GENERATION TIME      =        0.005 SECONDS      4 MB  48.6.1 67fbb04b DAX-DAC
+GAMS 48.6.1  67fbb04b Jan 23, 2025          DAX-DAC arm 64bit/macOS - 10/06/25 20:59:12 Page 7
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+Solution Report     SOLVE benny Using LP From line 51
+
+
+               S O L V E      S U M M A R Y
+
+     MODEL   benny               OBJECTIVE  profit
+     TYPE    LP                  DIRECTION  MAXIMIZE
+     SOLVER  CPLEX               FROM LINE  51
+
+**** SOLVER STATUS     1 Normal Completion
+**** MODEL STATUS      1 Optimal
+**** OBJECTIVE VALUE               62.2222
+
+ RESOURCE USAGE, LIMIT          0.006 10000000000.000
+ ITERATION COUNT, LIMIT         0    2147483647
+--- GAMS/CPLEX licensed for continuous and discrete problems.
+--- GMO setup time: 0.00s
+--- GMO memory 0.50 Mb (peak 0.50 Mb)
+--- Dictionary memory 0.00 Mb
+--- Cplex 22.1.1.0 link memory 0.00 Mb (peak 0.00 Mb)
+--- Starting Cplex
+
+
+--- LP status (1): optimal.
+--- Cplex Time: 0.01sec (det. 0.00 ticks)
+
+
+Optimal solution found
+Objective:           62.222222
+
+
+                           LOWER          LEVEL          UPPER         MARGINAL
+
+---- EQU eq_objfn            .              .              .             1.0000      
+---- EQU eq_hourli~        -INF           40.0000        40.0000         1.5556      
+---- EQU eq_combo                  (EMPTY)
+
+  eq_objfn  target of our optimization
+  eq_hourlimit  cant work more than 40 hours per week
+
+---- VAR X  --units-- production of units
+
+                 LOWER          LEVEL          UPPER         MARGINAL
+
+roll               .              .            +INF           -1.5833      
+croissant          .            17.7778        +INF             .          
+bread              .              .            +INF           -2.7778      
+
+                           LOWER          LEVEL          UPPER         MARGINAL
+
+---- VAR profit            -INF           62.2222        +INF             .          
+
+
+**** REPORT SUMMARY :        0     NONOPT
+                             0 INFEASIBLE
+                             0  UNBOUNDED
+GAMS 48.6.1  67fbb04b Jan 23, 2025          DAX-DAC arm 64bit/macOS - 10/06/25 20:59:12 Page 8
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+E x e c u t i o n
+
+
+----     52 COMBO 0 RESULTS:
+
+----     52 VARIABLE X.L  --units-- production of units
+
+croissant 17.778
+
+
+----     52 VARIABLE profit.L              =       62.222  
+GAMS 48.6.1  67fbb04b Jan 23, 2025          DAX-DAC arm 64bit/macOS - 10/06/25 20:59:12 Page 9
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+Equation Listing    SOLVE benny Using LP From line 55
+
+
+---- eq_objfn  =E=  target of our optimization
+
+eq_objfn..  - 0.75*X(roll) - 3.5*X(croissant) - 5*X(bread) + profit =E= 0 ; (LHS = 0)
+     
+
+---- eq_hourlimit  =L=  cant work more than 40 hours per week
+
+eq_hourlimit..  1.5*X(roll) + 2.25*X(croissant) + 5*X(bread) =L= 40 ; (LHS = 40)
+     
+
+---- eq_combo  =E=  
+
+eq_combo..  - X(roll) + X(croissant) =E= 0 ; (LHS = 17.7777777777778, INFES = 17.7777777777778 ****)
+     
+GAMS 48.6.1  67fbb04b Jan 23, 2025          DAX-DAC arm 64bit/macOS - 10/06/25 20:59:12 Page 10
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+Column Listing      SOLVE benny Using LP From line 55
+
+
+---- X  --units-- production of units
+
+X(roll)
+                (.LO, .L, .UP, .M = 0, 0, +INF, -1.58333333333333)
+       -0.75    eq_objfn
+        1.5     eq_hourlimit
+       -1       eq_combo
+
+X(croissant)
+                (.LO, .L, .UP, .M = 0, 17.7777777777778, +INF, 0)
+       -3.5     eq_objfn
+        2.25    eq_hourlimit
+        1       eq_combo
+
+X(bread)
+                (.LO, .L, .UP, .M = 0, 0, +INF, -2.77777777777778)
+       -5       eq_objfn
+        5       eq_hourlimit
+
+
+---- profit  
+
+profit
+                (.LO, .L, .UP, .M = -INF, 62.2222222222222, +INF, 0)
+        1       eq_objfn
+
+GAMS 48.6.1  67fbb04b Jan 23, 2025          DAX-DAC arm 64bit/macOS - 10/06/25 20:59:12 Page 11
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+Range Statistics    SOLVE benny Using LP From line 55
+
+
+RANGE STATISTICS (ABSOLUTE NON-ZERO FINITE VALUES)
+
+RHS       [min, max] : [ 4.000E+01, 4.000E+01] - Zero values observed as well
+Bound     [min, max] : [        NA,        NA] - Zero values observed as well
+Matrix    [min, max] : [ 7.500E-01, 5.000E+00]
+
+GAMS 48.6.1  67fbb04b Jan 23, 2025          DAX-DAC arm 64bit/macOS - 10/06/25 20:59:12 Page 12
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+Model Statistics    SOLVE benny Using LP From line 55
+
+
+MODEL STATISTICS
+
+BLOCKS OF EQUATIONS           3     SINGLE EQUATIONS            3
+BLOCKS OF VARIABLES           2     SINGLE VARIABLES            4
+NON ZERO ELEMENTS             9
+
+
+GENERATION TIME      =        0.001 SECONDS      4 MB  48.6.1 67fbb04b DAX-DAC
+GAMS 48.6.1  67fbb04b Jan 23, 2025          DAX-DAC arm 64bit/macOS - 10/06/25 20:59:12 Page 13
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+Solution Report     SOLVE benny Using LP From line 55
+
+
+               S O L V E      S U M M A R Y
+
+     MODEL   benny               OBJECTIVE  profit
+     TYPE    LP                  DIRECTION  MAXIMIZE
+     SOLVER  CPLEX               FROM LINE  55
+
+**** SOLVER STATUS     1 Normal Completion
+**** MODEL STATUS      1 Optimal
+**** OBJECTIVE VALUE               45.3333
+
+ RESOURCE USAGE, LIMIT          0.001 10000000000.000
+ ITERATION COUNT, LIMIT         0    2147483647
+--- GAMS/CPLEX licensed for continuous and discrete problems.
+--- GMO setup time: 0.00s
+--- GMO memory 0.50 Mb (peak 0.50 Mb)
+--- Dictionary memory 0.00 Mb
+--- Cplex 22.1.1.0 link memory 0.00 Mb (peak 0.00 Mb)
+--- Starting Cplex
+
+
+--- LP status (1): optimal.
+--- Cplex Time: 0.00sec (det. 0.00 ticks)
+
+
+Optimal solution found
+Objective:           45.333333
+
+
+                           LOWER          LEVEL          UPPER         MARGINAL
+
+---- EQU eq_objfn            .              .              .             1.0000      
+---- EQU eq_hourli~        -INF           40.0000        40.0000         1.1333      
+---- EQU eq_combo            .              .              .             0.9500      
+
+  eq_objfn  target of our optimization
+  eq_hourlimit  cant work more than 40 hours per week
+
+---- VAR X  --units-- production of units
+
+                 LOWER          LEVEL          UPPER         MARGINAL
+
+roll               .            10.6667        +INF             .          
+croissant          .            10.6667        +INF             .          
+bread              .              .            +INF           -0.6667      
+
+                           LOWER          LEVEL          UPPER         MARGINAL
+
+---- VAR profit            -INF           45.3333        +INF             .          
+
+
+**** REPORT SUMMARY :        0     NONOPT
+                             0 INFEASIBLE
+                             0  UNBOUNDED
+GAMS 48.6.1  67fbb04b Jan 23, 2025          DAX-DAC arm 64bit/macOS - 10/06/25 20:59:12 Page 14
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+E x e c u t i o n
+
+
+----     56 COMBO 1 RESULTS:
+
+----     56 VARIABLE X.L  --units-- production of units
+
+roll      10.667,    croissant 10.667
+
+
+----     56 VARIABLE profit.L              =       45.333  
+
+
+EXECUTION TIME       =        0.075 SECONDS      4 MB  48.6.1 67fbb04b DAX-DAC
+
+
+USER: Computational Economics EBGN 645               G250827|0002AO-GEN
+      Colorado School of Mines, Operations Research Department  DCE4628
+      License for teaching and research at degree granting institutions
+
+
+**** FILE SUMMARY
+
+Input      /Users/yudhajatmiko/Documents/GitHub/jatmiko_EBGN645/homework_1/A.gms
+Output     /Users/yudhajatmiko/Documents/GitHub/jatmiko_EBGN645/homework_1/A.lst

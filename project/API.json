@@ -1,0 +1,12 @@
+{
+  "api_keys": {
+    "alphavantage": "KLJDJASNNIDJU1RP",
+    "nasdaq": "fEJFuAUTQMP9M7sQtqVy", 
+    "financial_modeling_prep": "7HiL78GOZvEMHG0kKYJfy7Km0Eo6Mw5y",
+    "polygon": "6w7T6xSzXCre68dpP1SvNdxffec3DpUI",
+    "news_api": "583bc6975b7842eab5dd4a90df7ba3d8",
+    "fred": "4466d4bc4b416ccabe4eb8e20b540723",
+    "worldbank": null,
+    "oecd": null
+  }
+}
