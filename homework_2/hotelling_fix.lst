@@ -1,0 +1,406 @@
+GAMS 48.6.1  67fbb04b Jan 23, 2025          DAX-DAC arm 64bit/macOS - 10/21/25 17:20:07 Page 1
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+C o m p i l a t i o n
+
+
+   1  *Hotelling Model for Nickel Extraction
+   2   
+   3  Sets
+   4  t 'time period' /1*30/
+   5  countries 'nickel production per country' /us, australia, brazil, canada, china, indonesia, newcaledonia, philippines, russia, other/
+   6  ;
+   7   
+   8  *production and reserve data
+   9  table prod_reserve(countries,*)
+  10                   prod2022  prod2023  reserves
+  11  us                 17500     17000    340000
+  12  australia         155000    160000  24000000
+  13  brazil             88500     89000  16000000
+  14  canada            143000    180000   2200000
+  15  china             114000    110000   4200000
+  16  indonesia        1580000   1800000  55000000
+  17  newcaledonia      200000    230000   7100000
+  18  philippines       345000    400000   4800000
+  19  russia            222000    200000   8300000
+  20  other             404000    380000   9100000
+  21  ;
+  22   
+  23  *parameter declaration
+  24  parameter
+  25  p0 'initial nickel price (USD per tonne)'
+  26  r0 'total initial reserves (tonnes)'
+  27  q0 'initial monthly extraction rate (tonnes)'
+  28  c 'extraction cost (USD per tonne)'
+  29  disc_rate 'discount rate'
+  30  disc(t) 'discount factor by period'
+  31  ;
+  32   
+  33  *assumptions
+  34  *cost assumption: 1000 USD per tonne
+  35  *discount rate: 5% per period
+  36  *initial price: latest nickel price from June 2025 data
+  37  p0 = 15003.11;
+  38  r0 = sum(countries, prod_reserve(countries,'reserves'));
+  39  q0 = sum(countries, prod_reserve(countries,'prod2023')) / 12;
+  40  c = 1000;
+  41  disc_rate = 0.05;
+  42   
+  43  *discount factor calculation
+  44  disc(t) = 1 / power(1 + disc_rate, ord(t) - 1);
+  45  display p0, r0, q0;
+  46   
+  47  *variables
+  48  positive variable
+  49  q(t) 'quantity of extraction in period t (tonnes)'
+  50  reserve(t) 'remaining reserves by the end of period t (tonnes)';
+  51   
+  52  free variable
+  53  NPV 'net present value (USD)';
+  54   
+  55  *equations
+  56  equations
+  57  obj 'objective function - maximize NPV'
+  58  res_init 'initial reserve constraint'
+  59  res_bal(t) 'reserve balance equation';
+  60   
+  61  *NPV maximization objective function
+  62  obj.. NPV =e= sum(t, disc(t) * (p0 * q(t) - c * q(t)));
+  63   
+  64  *initial reserve constraint
+  65  res_init.. reserve('1') =e= r0 - q('1');
+  66   
+  67  *reserve balance equation
+  68  res_bal(t)$(ord(t) > 1).. reserve(t) =e= reserve(t-1) - q(t);
+  69   
+  70  *bounds and initial values
+  71  q.lo(t) = 0;
+  72  q.up(t) = q0 * 2;
+  73  q.l(t) = q0;
+  74  reserve.lo(t) = 0;
+  75  reserve.l(t) = r0 - q0 * ord(t);
+  76   
+  77  *solve model
+  78  model hotelling /all/;
+  79  solve hotelling using nlp maximizing NPV;
+  80   
+  81  *post-processing calculations
+  82  alias(t, t_prev);
+  83   
+  84  parameter
+  85  cum_extraction(t) 'cumulative extraction by period t (tonnes)'
+  86  depletion 'percentage of reserves depleted (%)'
+  87  ;
+  88   
+  89  cum_extraction(t) = sum(t_prev$(ord(t_prev) <= ord(t)), q.l(t_prev));
+  90  depletion = 100 * sum(t, q.l(t)) / r0;
+  91   
+  92  *display results
+  93  display
+  94  hotelling.modelstat, hotelling.solvestat,
+  95  NPV.l, q.l, reserve.l, cum_extraction, depletion
+  96  ;
+  97   
+  98  *export results
+  99  execute_unload "result.gdx";
+
+
+COMPILATION TIME     =        0.000 SECONDS      3 MB  48.6.1 67fbb04b DAX-DAC
+GAMS 48.6.1  67fbb04b Jan 23, 2025          DAX-DAC arm 64bit/macOS - 10/21/25 17:20:07 Page 2
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+E x e c u t i o n
+
+
+----     45 PARAMETER p0                   =    15003.110  initial nickel price (USD per tonne)
+            PARAMETER r0                   =  1.310400E+8  total initial reserves (tonnes)
+            PARAMETER q0                   =   297166.667  initial monthly extraction rate (tonnes)
+GAMS 48.6.1  67fbb04b Jan 23, 2025          DAX-DAC arm 64bit/macOS - 10/21/25 17:20:07 Page 3
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+Equation Listing    SOLVE hotelling Using NLP From line 79
+
+
+---- obj  =E=  objective function - maximize NPV
+
+obj..  - 14003.11*q(1) - 13336.2952380952*q(2) - 12701.2335600907*q(3) - 12096.4129143721*q(4) - 11520.393251783*q(5) - 10971.8030969361*q(6) - 10449.3362827963*q(7) - 9951.74884075841*q(8) - 9477.85603881753*q(9) - 9026.5295607786*q(10) - 8596.69481978914*q(11) - 8187.32839979918*q(12) - 7797.45561885637*q(13) - 7426.14820843463*q(14) - 7072.52210327108*q(15) - 6735.73533644865*q(16) - 6414.986034713*q(17) - 6109.51050925047*q(18) - 5818.5814373814*q(19) - 5541.50613083943*q(20) - 5277.62488651374*q(21) - 5026.30941572738*q(22) - 4786.96134831179*q(23) - 4559.01080791599*q(24) - 4341.91505515808*q(25) - 4135.15719538865*q(26) - 3938.24494798919*q(27) - 3750.70947427542*q(28) - 3572.10426121469*q(29) - 3402.0040582997*q(30) + NPV =E= 0 ; (LHS = -67167163835.1721, INFES = 67167163835.1721 ****)
+     
+
+---- res_init  =E=  initial reserve constraint
+
+res_init..  q(1) + reserve(1) =E= 131040000 ; (LHS = 131040000)
+     
+
+---- res_bal  =E=  reserve balance equation
+
+res_bal(2)..  q(2) - reserve(1) + reserve(2) =E= 0 ; (LHS = 1.49011611938477E-8, INFES = 1.49011611938477E-8 ****)
+     
+res_bal(3)..  q(3) - reserve(2) + reserve(3) =E= 0 ; (LHS = 0)
+     
+res_bal(4)..  q(4) - reserve(3) + reserve(4) =E= 0 ; (LHS = 0)
+     
+REMAINING 26 ENTRIES SKIPPED
+
+GAMS 48.6.1  67fbb04b Jan 23, 2025          DAX-DAC arm 64bit/macOS - 10/21/25 17:20:07 Page 4
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+Column Listing      SOLVE hotelling Using NLP From line 79
+
+
+---- q  quantity of extraction in period t (tonnes)
+
+q(1)
+                (.LO, .L, .UP, .M = 0, 297166.666666667, 594333.333333333, 0)
+   -14003.11    obj
+        1       res_init
+
+q(2)
+                (.LO, .L, .UP, .M = 0, 297166.666666667, 594333.333333333, 0)
+   -13336.2952  obj
+        1       res_bal(2)
+
+q(3)
+                (.LO, .L, .UP, .M = 0, 297166.666666667, 594333.333333333, 0)
+   -12701.2336  obj
+        1       res_bal(3)
+
+REMAINING 27 ENTRIES SKIPPED
+
+---- reserve  remaining reserves by the end of period t (tonnes)
+
+reserve(1)
+                (.LO, .L, .UP, .M = 0, 130742833.333333, +INF, 0)
+        1       res_init
+       -1       res_bal(2)
+
+reserve(2)
+                (.LO, .L, .UP, .M = 0, 130445666.666667, +INF, 0)
+        1       res_bal(2)
+       -1       res_bal(3)
+
+reserve(3)
+                (.LO, .L, .UP, .M = 0, 130148500, +INF, 0)
+        1       res_bal(3)
+       -1       res_bal(4)
+
+REMAINING 27 ENTRIES SKIPPED
+
+---- NPV  net present value (USD)
+
+NPV
+                (.LO, .L, .UP, .M = -INF, 0, +INF, 0)
+        1       obj
+
+GAMS 48.6.1  67fbb04b Jan 23, 2025          DAX-DAC arm 64bit/macOS - 10/21/25 17:20:07 Page 5
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+Model Statistics    SOLVE hotelling Using NLP From line 79
+
+
+MODEL STATISTICS
+
+BLOCKS OF EQUATIONS           3     SINGLE EQUATIONS           31
+BLOCKS OF VARIABLES           3     SINGLE VARIABLES           61
+NON ZERO ELEMENTS           120     NON LINEAR N-Z              0
+CODE LENGTH                   0     CONSTANT POOL              16
+
+
+GENERATION TIME      =        0.001 SECONDS      4 MB  48.6.1 67fbb04b DAX-DAC
+GAMS 48.6.1  67fbb04b Jan 23, 2025          DAX-DAC arm 64bit/macOS - 10/21/25 17:20:07 Page 6
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+Solution Report     SOLVE hotelling Using NLP From line 79
+
+
+               S O L V E      S U M M A R Y
+
+     MODEL   hotelling           OBJECTIVE  NPV
+     TYPE    NLP                 DIRECTION  MAXIMIZE
+     SOLVER  CONOPT              FROM LINE  79
+
+**** SOLVER STATUS     1 Normal Completion
+**** MODEL STATUS      1 Optimal
+**** OBJECTIVE VALUE     134334327670.3441
+
+ RESOURCE USAGE, LIMIT          0.024 10000000000.000
+ ITERATION COUNT, LIMIT         1    2147483647
+ EVALUATION ERRORS              0             0
+ 
+ 
+    C O N O P T   version 4.35
+    Copyright (C) GAMS Software GmbH
+                  GAMS Development Corporation
+ 
+ 
+    The user model has 31 constraints and 61 variables
+    with 120 Jacobian elements, 0 of which are nonlinear.
+ 
+    The pre-triangular part of the model has 0 constraints and 30 variables.
+    The post-triangular part of the model has 31 constraints and variables.
+ 
+    Preprocessed model is empty.
+ 
+ ** Optimal solution. There are no superbasic variables.
+ 
+ 
+ CONOPT time Total                            0.005 seconds
+   of which: Function evaluations             0.000 =  0.0%
+             1st Derivative evaluations       0.000 =  0.0%
+ 
+
+                           LOWER          LEVEL          UPPER         MARGINAL
+
+---- EQU obj                 .              .              .             1.0000      
+---- EQU res_init     1.3104000E+8   1.3104000E+8   1.3104000E+8         EPS         
+
+  obj  objective function - maximize NPV
+  res_init  initial reserve constraint
+
+---- EQU res_bal  reserve balance equation
+
+          LOWER          LEVEL          UPPER         MARGINAL
+
+2           .              .              .             EPS         
+3           .              .              .             EPS         
+4           .              .              .             EPS         
+5           .              .              .             EPS         
+6           .              .              .             EPS         
+7           .              .              .             EPS         
+8           .              .              .             EPS         
+9           .              .              .             EPS         
+10          .              .              .             EPS         
+11          .              .              .             EPS         
+12          .              .              .             EPS         
+13          .              .              .             EPS         
+14          .              .              .             EPS         
+15          .              .              .             EPS         
+16          .              .              .             EPS         
+17          .              .              .             EPS         
+18          .              .              .             EPS         
+19          .              .              .             EPS         
+20          .              .              .             EPS         
+21          .              .              .             EPS         
+22          .              .              .             EPS         
+23          .              .              .             EPS         
+24          .              .              .             EPS         
+25          .              .              .             EPS         
+26          .              .              .             EPS         
+27          .              .              .             EPS         
+28          .              .              .             EPS         
+29          .              .              .             EPS         
+30          .              .              .             EPS         
+
+---- VAR q  quantity of extraction in period t (tonnes)
+
+          LOWER          LEVEL          UPPER         MARGINAL
+
+1           .        594333.3333    594333.3333     14003.1100      
+2           .        594333.3333    594333.3333     13336.2952      
+3           .        594333.3333    594333.3333     12701.2336      
+4           .        594333.3333    594333.3333     12096.4129      
+5           .        594333.3333    594333.3333     11520.3933      
+6           .        594333.3333    594333.3333     10971.8031      
+7           .        594333.3333    594333.3333     10449.3363      
+8           .        594333.3333    594333.3333      9951.7488      
+9           .        594333.3333    594333.3333      9477.8560      
+10          .        594333.3333    594333.3333      9026.5296      
+11          .        594333.3333    594333.3333      8596.6948      
+12          .        594333.3333    594333.3333      8187.3284      
+13          .        594333.3333    594333.3333      7797.4556      
+14          .        594333.3333    594333.3333      7426.1482      
+15          .        594333.3333    594333.3333      7072.5221      
+16          .        594333.3333    594333.3333      6735.7353      
+17          .        594333.3333    594333.3333      6414.9860      
+18          .        594333.3333    594333.3333      6109.5105      
+19          .        594333.3333    594333.3333      5818.5814      
+20          .        594333.3333    594333.3333      5541.5061      
+21          .        594333.3333    594333.3333      5277.6249      
+22          .        594333.3333    594333.3333      5026.3094      
+23          .        594333.3333    594333.3333      4786.9613      
+24          .        594333.3333    594333.3333      4559.0108      
+25          .        594333.3333    594333.3333      4341.9151      
+26          .        594333.3333    594333.3333      4135.1572      
+27          .        594333.3333    594333.3333      3938.2449      
+28          .        594333.3333    594333.3333      3750.7095      
+29          .        594333.3333    594333.3333      3572.1043      
+30          .        594333.3333    594333.3333      3402.0041      
+
+---- VAR reserve  remaining reserves by the end of period t (tonnes)
+
+          LOWER          LEVEL          UPPER         MARGINAL
+
+1           .       1.3044567E+8        +INF             .          
+2           .       1.2985133E+8        +INF             .          
+3           .       1.2925700E+8        +INF             .          
+4           .       1.2866267E+8        +INF             .          
+5           .       1.2806833E+8        +INF             .          
+6           .       1.2747400E+8        +INF             .          
+7           .       1.2687967E+8        +INF             .          
+8           .       1.2628533E+8        +INF             .          
+9           .       1.2569100E+8        +INF             .          
+10          .       1.2509667E+8        +INF             .          
+11          .       1.2450233E+8        +INF             .          
+12          .       1.2390800E+8        +INF             .          
+13          .       1.2331367E+8        +INF             .          
+14          .       1.2271933E+8        +INF             .          
+15          .       1.2212500E+8        +INF             .          
+16          .       1.2153067E+8        +INF             .          
+17          .       1.2093633E+8        +INF             .          
+18          .       1.2034200E+8        +INF             .          
+19          .       1.1974767E+8        +INF             .          
+20          .       1.1915333E+8        +INF             .          
+21          .       1.1855900E+8        +INF             .          
+22          .       1.1796467E+8        +INF             .          
+23          .       1.1737033E+8        +INF             .          
+24          .       1.1677600E+8        +INF             .          
+25          .       1.1618167E+8        +INF             .          
+26          .       1.1558733E+8        +INF             .          
+27          .       1.1499300E+8        +INF             .          
+28          .       1.1439867E+8        +INF             .          
+29          .       1.1380433E+8        +INF             .          
+30          .       1.1321000E+8        +INF             .          
+
+                           LOWER          LEVEL          UPPER         MARGINAL
+
+---- VAR NPV               -INF      1.343343E+11        +INF             .          
+
+  NPV  net present value (USD)
+
+
+**** REPORT SUMMARY :        0     NONOPT
+                             0 INFEASIBLE
+                             0  UNBOUNDED
+                             0     ERRORS
+GAMS 48.6.1  67fbb04b Jan 23, 2025          DAX-DAC arm 64bit/macOS - 10/21/25 17:20:07 Page 7
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+E x e c u t i o n
+
+
+----     94 MODEL hotelling.ModelStat      =        1.000  
+            MODEL hotelling.SolveStat      =        1.000  
+            VARIABLE NPV.L                 =  1.34334E+11  net present value (USD)
+
+----     94 VARIABLE q.L  quantity of extraction in period t (tonnes)
+
+1  594333.333,    2  594333.333,    3  594333.333,    4  594333.333,    5  594333.333,    6  594333.333,    7  594333.333,    8  594333.333,    9  594333.333,    10 594333.333,    11 594333.333,    12 594333.333,    13 594333.333,    14 594333.333,    15 594333.333,    16 594333.333,    17 594333.333,    18 594333.333,    19 594333.333,    20 594333.333,    21 594333.333,    22 594333.333,    23 594333.333,    24 594333.333,    25 594333.333,    26 594333.333,    27 594333.333,    28 594333.333,    29 594333.333,    30 594333.333
+
+
+----     94 VARIABLE reserve.L  remaining reserves by the end of period t (tonnes)
+
+1  1.304457E+8,    2  1.298513E+8,    3  1.292570E+8,    4  1.286627E+8,    5  1.280683E+8,    6  1.274740E+8,    7  1.268797E+8,    8  1.262853E+8,    9  1.256910E+8,    10 1.250967E+8,    11 1.245023E+8,    12 1.239080E+8,    13 1.233137E+8,    14 1.227193E+8,    15 1.221250E+8,    16 1.215307E+8,    17 1.209363E+8,    18 1.203420E+8,    19 1.197477E+8,    20 1.191533E+8,    21 1.185590E+8,    22 1.179647E+8,    23 1.173703E+8,    24 1.167760E+8,    25 1.161817E+8,    26 1.155873E+8,    27 1.149930E+8,    28 1.143987E+8,    29 1.138043E+8,    30 1.132100E+8
+
+
+----     94 PARAMETER cum_extraction  cumulative extraction by period t (tonnes)
+
+1   594333.333,    2  1188666.667,    3  1783000.000,    4  2377333.333,    5  2971666.667,    6  3566000.000,    7  4160333.333,    8  4754666.667,    9  5349000.000,    10 5943333.333,    11 6537666.667,    12 7132000.000,    13 7726333.333,    14 8320666.667,    15 8915000.000,    16 9509333.333,    17 1.010367E+7,    18 1.069800E+7,    19 1.129233E+7,    20 1.188667E+7,    21 1.248100E+7,    22 1.307533E+7,    23 1.366967E+7,    24 1.426400E+7,    25 1.485833E+7,    26 1.545267E+7,    27 1.604700E+7,    28 1.664133E+7,    29 1.723567E+7,    30 1.783000E+7
+
+
+----     94 PARAMETER depletion            =       13.607  percentage of reserves depleted (%)
+
+
+EXECUTION TIME       =        0.066 SECONDS      4 MB  48.6.1 67fbb04b DAX-DAC
+
+
+USER: Computational Economics EBGN 645               G250827|0002AO-GEN
+      Colorado School of Mines, Operations Research Department  DCE4628
+      License for teaching and research at degree granting institutions
+
+
+**** FILE SUMMARY
+
+Input      /Users/yudhajatmiko/Documents/GitHub/jatmiko_EBGN645/homework_2/hotelling_fix.gms
+Output     /Users/yudhajatmiko/Documents/GitHub/jatmiko_EBGN645/homework_2/hotelling_fix.lst
