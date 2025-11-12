@@ -1,4 +1,4 @@
-GAMS 48.6.1  67fbb04b Jan 23, 2025          DAX-DAC arm 64bit/macOS - 10/21/25 17:20:07 Page 1
+GAMS 48.6.1  67fbb04b Jan 23, 2025          DAX-DAC arm 64bit/macOS - 11/12/25 00:53:54 Page 1
 G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
 C o m p i l a t i o n
 
@@ -8,114 +8,205 @@ C o m p i l a t i o n
    3  Sets
    4  t 'time period' /1*30/
    5  countries 'nickel production per country' /us, australia, brazil, canada, china, indonesia, newcaledonia, philippines, russia, other/
-   6  ;
-   7   
-   8  *production and reserve data
-   9  table prod_reserve(countries,*)
-  10                   prod2022  prod2023  reserves
-  11  us                 17500     17000    340000
-  12  australia         155000    160000  24000000
-  13  brazil             88500     89000  16000000
-  14  canada            143000    180000   2200000
-  15  china             114000    110000   4200000
-  16  indonesia        1580000   1800000  55000000
-  17  newcaledonia      200000    230000   7100000
-  18  philippines       345000    400000   4800000
-  19  russia            222000    200000   8300000
-  20  other             404000    380000   9100000
-  21  ;
-  22   
-  23  *parameter declaration
-  24  parameter
-  25  p0 'initial nickel price (USD per tonne)'
-  26  r0 'total initial reserves (tonnes)'
-  27  q0 'initial monthly extraction rate (tonnes)'
-  28  c 'extraction cost (USD per tonne)'
-  29  disc_rate 'discount rate'
-  30  disc(t) 'discount factor by period'
-  31  ;
-  32   
-  33  *assumptions
-  34  *cost assumption: 1000 USD per tonne
-  35  *discount rate: 5% per period
-  36  *initial price: latest nickel price from June 2025 data
-  37  p0 = 15003.11;
-  38  r0 = sum(countries, prod_reserve(countries,'reserves'));
-  39  q0 = sum(countries, prod_reserve(countries,'prod2023')) / 12;
-  40  c = 1000;
-  41  disc_rate = 0.05;
-  42   
-  43  *discount factor calculation
-  44  disc(t) = 1 / power(1 + disc_rate, ord(t) - 1);
-  45  display p0, r0, q0;
-  46   
-  47  *variables
-  48  positive variable
-  49  q(t) 'quantity of extraction in period t (tonnes)'
-  50  reserve(t) 'remaining reserves by the end of period t (tonnes)';
-  51   
-  52  free variable
-  53  NPV 'net present value (USD)';
-  54   
-  55  *equations
-  56  equations
-  57  obj 'objective function - maximize NPV'
-  58  res_init 'initial reserve constraint'
-  59  res_bal(t) 'reserve balance equation';
+   6  scenario 'price scenarios' /oversupply, balanced, supply_constraint, ev_boom/
+   7  ;
+   8   
+   9  *production and reserve data
+  10  table prod_reserve(countries,*)
+  11                   prod2022  prod2023  reserves
+  12  us                 17500     17000    340000
+  13  australia         155000    160000  24000000
+  14  brazil             88500     89000  16000000
+  15  canada            143000    180000   2200000
+  16  china             114000    110000   4200000
+  17  indonesia        1580000   1800000  55000000
+  18  newcaledonia      200000    230000   7100000
+  19  philippines       345000    400000   4800000
+  20  russia            222000    200000   8300000
+  21  other             404000    380000   9100000
+  22  ;
+  23   
+  24  *parameter declaration
+  25  parameter
+  26  p0 'initial nickel price (USD per tonne)'
+  27  r0 'total initial reserves (tonnes)'
+  28  q0 'initial monthly extraction rate (tonnes)'
+  29  c 'extraction cost (USD per tonne)'
+  30  disc_rate 'discount rate'
+  31  disc(t) 'discount factor by period'
+  32  ;
+  33   
+  34  *assumptions
+  35  *cost assumption: 1000 USD per tonne
+  36  *discount rate: 5% per period
+  37  *initial price: latest nickel price from June 2025 data
+  38  p0 = 15003.11;
+  39  r0 = sum(countries, prod_reserve(countries,'reserves'));
+  40  q0 = sum(countries, prod_reserve(countries,'prod2023')) / 12;
+  41  c = 1000;
+  42  disc_rate = 0.05;
+  43   
+  44  *discount factor calculation
+  45  disc(t) = 1 / power(1 + disc_rate, ord(t) - 1);
+  46  display p0, r0, q0;
+  47   
+  48  *new parameter (indonesia and scenarios)
+  49  parameter
+  50  r0_INA 'Indonesian reserves only'
+  51  q0_INA 'Indonesian annual production'
+  52  growth_rate(scenario) 'annual price growth rates'
+  53  prob_scenario(scenario) 'scenario probabilities'
+  54  price_path(scenario,t) 'price evolution by scenario'
+  55  ;
+  56   
+  57  *Indonesia specific parameters
+  58  r0_INA = prod_reserve('indonesia','reserves');
+  59  q0_INA = prod_reserve('indonesia','prod2023');
   60   
-  61  *NPV maximization objective function
-  62  obj.. NPV =e= sum(t, disc(t) * (p0 * q(t) - c * q(t)));
-  63   
-  64  *initial reserve constraint
-  65  res_init.. reserve('1') =e= r0 - q('1');
-  66   
-  67  *reserve balance equation
-  68  res_bal(t)$(ord(t) > 1).. reserve(t) =e= reserve(t-1) - q(t);
-  69   
-  70  *bounds and initial values
-  71  q.lo(t) = 0;
-  72  q.up(t) = q0 * 2;
-  73  q.l(t) = q0;
-  74  reserve.lo(t) = 0;
-  75  reserve.l(t) = r0 - q0 * ord(t);
+  61   
+  62  *price scenario (based on IEA mineral outlook), I dont find nickel price forecast
+  63  growth_rate('oversupply') = -0.03;
+  64  growth_rate('balanced') = 0.02;
+  65  growth_rate('supply_constraint') = 0.04;
+  66  growth_rate('ev_boom') = 0.06;
+  67   
+  68  *probability of scenario
+  69  prob_scenario('oversupply') = 0.25;
+  70  prob_scenario('balanced') = 0.40;
+  71  prob_scenario('supply_constraint') = 0.20;
+  72  prob_scenario('ev_boom') = 0.15;
+  73   
+  74  *price path based on the scenario
+  75  price_path(scenario,t) = p0 * power(1 + growth_rate(scenario), ord(t) - 1);
   76   
-  77  *solve model
-  78  model hotelling /all/;
-  79  solve hotelling using nlp maximizing NPV;
-  80   
-  81  *post-processing calculations
-  82  alias(t, t_prev);
-  83   
-  84  parameter
-  85  cum_extraction(t) 'cumulative extraction by period t (tonnes)'
-  86  depletion 'percentage of reserves depleted (%)'
-  87  ;
-  88   
-  89  cum_extraction(t) = sum(t_prev$(ord(t_prev) <= ord(t)), q.l(t_prev));
-  90  depletion = 100 * sum(t, q.l(t)) / r0;
+  77   
+  78  *variables
+  79  positive variables
+  80  q(t) 'quantity of extraction in period t (tonnes)'
+  81  reserve(t) 'remaining reserves by the end of period t (tonnes)'
+  82  q_INA(scenario,t) 'Indonesian extraction by scenario'
+  83  reserve_INA(scenario,t) 'Indonesian reserves by scenario'
+  84  ;
+  85   
+  86  free variables
+  87  NPV 'net present value (USD)'
+  88  NPV_INA(scenario) 'Indonesian NPV by scenario'
+  89  expected_NPV_INA 'expected Indonesian NPV'
+  90  ;
   91   
-  92  *display results
-  93  display
-  94  hotelling.modelstat, hotelling.solvestat,
-  95  NPV.l, q.l, reserve.l, cum_extraction, depletion
-  96  ;
-  97   
-  98  *export results
-  99  execute_unload "result.gdx";
+  92   
+  93  *equations
+  94  equations
+  95  obj 'objective function - maximize NPV'
+  96  res_init 'initial reserve constraint'
+  97  res_bal(t) 'reserve balance equation'
+  98  *Indonesia Equations
+  99  obj_INA(scenario) 'Indonesian NPV by scenario'
+ 100  exp_obj_INA 'expected Indonesian NPV'
+ 101  res_init_INA(scenario) 'Indonesian initial reserves'
+ 102  res_bal_INA(scenario,t) 'Indonesian reserve balance'
+ 103  ;
+ 104   
+ 105   
+ 106  *NPV maximization objective function
+ 107  obj.. NPV =e= sum(t, disc(t) * (p0 * q(t) - c * q(t)));
+ 108   
+ 109  *initial reserve constraint
+ 110  res_init.. reserve('1') =e= r0 - q('1');
+ 111   
+ 112  *reserve balance equation
+ 113  res_bal(t)$(ord(t) > 1).. reserve(t) =e= reserve(t-1) - q(t);
+ 114   
+ 115   
+ 116  *Indonesia scenario
+ 117  obj_INA(scenario).. NPV_INA(scenario) =e= sum(t, disc(t) * (price_path(scenario,t) - c) * q_INA(scenario,t));
+ 118  exp_obj_INA.. expected_NPV_INA =e= sum(scenario, prob_scenario(scenario) * NPV_INA(scenario));
+ 119  res_init_INA(scenario).. reserve_INA(scenario,'1') =e= r0_INA - q_INA(scenario,'1');
+ 120  res_bal_INA(scenario,t)$(ord(t) > 1).. reserve_INA(scenario,t) =e= reserve_INA(scenario,t-1) - q_INA(scenario,t);
+ 121   
+ 122   
+ 123  *bounds and initial values
+ 124  q.lo(t) = 0;
+ 125  q.up(t) = q0 * 2;
+ 126  q.l(t) = q0;
+ 127  reserve.lo(t) = 0;
+ 128  reserve.l(t) = r0 - q0 * ord(t);
+ 129   
+ 130  *Indonesian bounds
+ 131  q_INA.lo(scenario,t) = 0;
+ 132  q_INA.up(scenario,t) = q0_INA * 2;
+ 133  q_INA.l(scenario,t) = q0_INA;
+ 134  reserve_INA.lo(scenario,t) = 0;
+ 135  reserve_INA.l(scenario,t) = r0_INA - q0_INA * ord(t);
+ 136   
+ 137  *solve model
+ 138  model hotelling /all/;
+ 139  solve hotelling using nlp maximizing NPV;
+ 140   
+ 141  *solve indonesia model
+ 142  model hotelling_INA /obj_INA, exp_obj_INA, res_init_INA, res_bal_INA/;
+ 143  solve hotelling_INA using nlp maximizing expected_NPV_INA;
+ 144   
+ 145  *post-processing calculations
+ 146  alias(t, t_prev);
+ 147   
+ 148  parameter
+ 149  cum_extraction(t) 'cumulative extraction by period t (tonnes)'
+ 150  depletion 'percentage of reserves depleted (%)'
+ 151  ;
+ 152   
+ 153  *Indonesia analysis
+ 154  parameter
+ 155  early_extraction_INA(scenario) 'Indonesian extraction years 1-10'
+ 156  late_extraction_INA(scenario) 'Indonesian extraction years 11-20'
+ 157  timing_ratio(scenario) 'early vs late extraction ratio'
+ 158  final_price(scenario) 'price in year 30'
+ 159  ;
+ 160   
+ 161   
+ 162  cum_extraction(t) = sum(t_prev$(ord(t_prev) <= ord(t)), q.l(t_prev));
+ 163  depletion = 100 * sum(t, q.l(t)) / r0;
+ 164  *new timing
+ 165  early_extraction_INA(scenario) = sum(t$(ord(t) <= 10), q_INA.l(scenario,t));
+ 166  late_extraction_INA(scenario) = sum(t$(ord(t) >= 11), q_INA.l(scenario,t));
+ 167  timing_ratio(scenario) = early_extraction_INA(scenario) / (late_extraction_INA(scenario) + 0.001);
+ 168  final_price(scenario) = price_path(scenario,'30');
+ 169   
+ 170   
+ 171  *display results
+ 172  display
+ 173  hotelling.modelstat, hotelling.solvestat,
+ 174  NPV.l, q.l, reserve.l, cum_extraction, depletion,
+ 175  expected_NPV_INA.l,
+ 176  NPV_INA.l,
+ 177  timing_ratio,
+ 178  final_price
+ 179  ;
+ 180   
+ 181   
+ 182  *export results
+ 183  execute_unload "result.gdx";
+ 184  execute_unload "indonesia_results.gdx" q_INA, NPV_INA, timing_ratio;
+ 185   
+ 186  *result
+ 187  *VARIABLE NPV.L                 =  1.34334E+11  net present value (USD)
+ 188  *PARAMETER depletion            =       13.607  percentage of reserves depleted (%)
+ 189  *VAR q  quantity of extraction in period t (tonnes) 594333.3333
+ 190  *Time value money 3402.0041 in period 30th
 
 
-COMPILATION TIME     =        0.000 SECONDS      3 MB  48.6.1 67fbb04b DAX-DAC
-GAMS 48.6.1  67fbb04b Jan 23, 2025          DAX-DAC arm 64bit/macOS - 10/21/25 17:20:07 Page 2
+COMPILATION TIME     =        0.001 SECONDS      3 MB  48.6.1 67fbb04b DAX-DAC
+GAMS 48.6.1  67fbb04b Jan 23, 2025          DAX-DAC arm 64bit/macOS - 11/12/25 00:53:54 Page 2
 G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
 E x e c u t i o n
 
 
-----     45 PARAMETER p0                   =    15003.110  initial nickel price (USD per tonne)
+----     46 PARAMETER p0                   =    15003.110  initial nickel price (USD per tonne)
             PARAMETER r0                   =  1.310400E+8  total initial reserves (tonnes)
             PARAMETER q0                   =   297166.667  initial monthly extraction rate (tonnes)
-GAMS 48.6.1  67fbb04b Jan 23, 2025          DAX-DAC arm 64bit/macOS - 10/21/25 17:20:07 Page 3
+GAMS 48.6.1  67fbb04b Jan 23, 2025          DAX-DAC arm 64bit/macOS - 11/12/25 00:53:54 Page 3
 G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
-Equation Listing    SOLVE hotelling Using NLP From line 79
+Equation Listing    SOLVE hotelling Using NLP From line 139
 
 
 ---- obj  =E=  objective function - maximize NPV
@@ -138,9 +229,47 @@ res_bal(4)..  q(4) - reserve(3) + reserve(4) =E= 0 ; (LHS = 0)
      
 REMAINING 26 ENTRIES SKIPPED
 
-GAMS 48.6.1  67fbb04b Jan 23, 2025          DAX-DAC arm 64bit/macOS - 10/21/25 17:20:07 Page 4
+
+---- obj_INA  =E=  Indonesian NPV by scenario
+
+obj_INA(oversupply)..  - 14003.11*q_INA(oversupply,1) - 12907.634952381*q_INA(oversupply,2) - 11896.9852145125*q_INA(oversupply,3) - 10964.6331178318*q_INA(oversupply,4) - 10104.5514250865*q_INA(oversupply,5) - 9311.17505532399*q_INA(oversupply,6) - 8579.36573206687*q_INA(oversupply,7) - 7904.37933162454*q_INA(oversupply,8) - 7281.83572549705*q_INA(oversupply,9) - 6707.69092654407*q_INA(oversupply,10) - 6178.21136310592*q_INA(oversupply,11) - 5689.95011867288*q_INA(oversupply,12) - 5239.7249870858*q_INA(oversupply,13) - 4824.59820469324*q_INA(oversupply,14) - 4441.85773146008*q_INA(oversupply,15) - 4088.99996278706*q_INA(oversupply,16) - 3763.71376281973*q_INA(oversupply,17) - 3463.86571835752*q_INA(oversupply,18) - 3187.48652016997*q_INA(oversupply,19) - 2932.758385637*q_INA(oversupply,20) - 2698.00344319751*q_INA(oversupply,21) - 2481.67300515752*q_INA(oversupply,22) - 2282.33766101292*q_INA(oversupply,23) - 2098.67812861899*q_INA(oversupply,24) - 1929.47680532049*q_INA(oversupply,25) - 1773.60996557371*q_INA(oversupply,26) - 1630.04055567197*q_INA(oversupply,27) - 1497.81153995552*q_INA(oversupply,28) - 1376.03975636843*q_INA(oversupply,29) - 1263.91024244103*q_INA(oversupply,30) + NPV_INA(oversupply) =E= 0 ; (LHS = -292507396810.156, INFES = 292507396810.156 ****)
+     
+obj_INA(balanced)..  - 14003.11*q_INA(balanced,1) - 13622.0687619048*q_INA(balanced,2) - 13251.0073868481*q_INA(balanced,3) - 12889.6839277659*q_INA(balanced,4) - 12537.8612936113*q_INA(balanced,5) - 12195.3072085518*q_INA(balanced,6) - 11861.7941676687*q_INA(balanced,7) - 11537.0993894808*q_INA(balanced,8) - 11221.0047655933*q_INA(balanced,9) - 10913.2968077579*q_INA(balanced,10) - 10613.7665926071*q_INA(balanced,11) - 10322.2097043143*q_INA(balanced,12) - 10038.4261754117*q_INA(balanced,13) - 9762.22042598429*q_INA(balanced,14) - 9493.40120144465*q_INA(balanced,15) - 9231.78150907948*q_INA(balanced,16) - 8977.17855354561*q_INA(balanced,17) - 8729.41367148224*q_INA(balanced,18) - 8488.31226539438*q_INA(balanced,19) - 8253.70373695201*q_INA(balanced,20) - 8025.42141983942*q_INA(balanced,21) - 7803.30251227968*q_INA(balanced,22) - 7587.18800935057*q_INA(balanced,23) - 7376.92263519934*q_INA(balanced,24) - 7172.35477525644*q_INA(balanced,25) - 6973.33640854021*q_INA(balanced,26) - 6779.72304013807*q_INA(balanced,27) - 6591.3736339427*q_INA(balanced,28) - 6408.15054571577*q_INA(balanced,29) - 6229.91945654566*q_INA(balanced,30) + NPV_INA(balanced) =E= 0 ; (LHS = -520002611967.971, INFES = 520002611967.971 ****)
+     
+obj_INA(supply_constraint)..  - 14003.11*q_INA(supply_constraint,1) - 13907.8422857143*q_INA(supply_constraint,2) - 13811.6678240363*q_INA(supply_constraint,3) - 13714.6816344153*q_INA(supply_constraint,4) - 13616.9737178411*q_INA(supply_constraint,5) - 13518.6293005204*q_INA(supply_constraint,6) - 13419.7290659047*q_INA(supply_constraint,7) - 13320.3493756251*q_INA(supply_constraint,8) - 13220.5624798622*q_INA(supply_constraint,9) - 13120.4367176551*q_INA(supply_constraint,10) - 13020.0367076286*q_INA(supply_constraint,11) - 12919.4235295956*q_INA(supply_constraint,12) - 12818.6548974694*q_INA(supply_constraint,13) - 12717.7853239003*q_INA(supply_constraint,14) - 12616.8662770306*q_INA(supply_constraint,15) - 12515.9463297444*q_INA(supply_constraint,16) - 12415.0713017693*q_INA(supply_constraint,17) - 12314.2843949712*q_INA(supply_constraint,18) - 12213.6263221662*q_INA(supply_constraint,19) - 12113.1354297595*q_INA(supply_constraint,20) - 12012.8478145053*q_INA(supply_constraint,21) - 11912.7974346671*q_INA(supply_constraint,22) - 11813.0162158471*q_INA(supply_constraint,23) - 11713.5341517375*q_INA(supply_constraint,24) - 11614.3794000371*q_INA(supply_constraint,25) - 11515.5783737618*q_INA(supply_constraint,26) - 11417.1558281716*q_INA(supply_constraint,27) - 11319.1349435204*q_INA(supply_constraint,28) - 11221.5374038298*q_INA(supply_constraint,29) - 11124.3834718749*q_INA(supply_constraint,30) + NPV_INA(supply_constraint) =E= 0 ; (LHS = -678569720316.412, INFES = 678569720316.412 ****)
+     
+REMAINING ENTRY SKIPPED
+
+
+---- exp_obj_INA  =E=  expected Indonesian NPV
+
+exp_obj_INA..  - 0.25*NPV_INA(oversupply) - 0.4*NPV_INA(balanced) - 0.2*NPV_INA(supply_constraint) - 0.15*NPV_INA(ev_boom) + expected_NPV_INA =E= 0 ; (LHS = 0)
+     
+
+---- res_init_INA  =E=  Indonesian initial reserves
+
+res_init_INA(oversupply)..  q_INA(oversupply,1) + reserve_INA(oversupply,1) =E= 55000000 ; (LHS = 55000000)
+     
+res_init_INA(balanced)..  q_INA(balanced,1) + reserve_INA(balanced,1) =E= 55000000 ; (LHS = 55000000)
+     
+res_init_INA(supply_constraint)..  q_INA(supply_constraint,1) + reserve_INA(supply_constraint,1) =E= 55000000 ; (LHS = 55000000)
+     
+REMAINING ENTRY SKIPPED
+
+
+---- res_bal_INA  =E=  Indonesian reserve balance
+
+res_bal_INA(oversupply,2)..  q_INA(oversupply,2) - reserve_INA(oversupply,1) + reserve_INA(oversupply,2) =E= 0 ; (LHS = 0)
+     
+res_bal_INA(oversupply,3)..  q_INA(oversupply,3) - reserve_INA(oversupply,2) + reserve_INA(oversupply,3) =E= 0 ; (LHS = 0)
+     
+res_bal_INA(oversupply,4)..  q_INA(oversupply,4) - reserve_INA(oversupply,3) + reserve_INA(oversupply,4) =E= 0 ; (LHS = 0)
+     
+REMAINING 113 ENTRIES SKIPPED
+
+GAMS 48.6.1  67fbb04b Jan 23, 2025          DAX-DAC arm 64bit/macOS - 11/12/25 00:53:54 Page 4
 G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
-Column Listing      SOLVE hotelling Using NLP From line 79
+Column Listing      SOLVE hotelling Using NLP From line 139
 
 
 ---- q  quantity of extraction in period t (tonnes)
@@ -181,42 +310,117 @@ reserve(3)
 
 REMAINING 27 ENTRIES SKIPPED
 
+---- q_INA  Indonesian extraction by scenario
+
+q_INA(oversupply,1)
+                (.LO, .L, .UP, .M = 0, 1800000, 3600000, 0)
+   -14003.11    obj_INA(oversupply)
+        1       res_init_INA(oversupply)
+
+q_INA(oversupply,2)
+                (.LO, .L, .UP, .M = 0, 1800000, 3600000, 0)
+   -12907.635   obj_INA(oversupply)
+        1       res_bal_INA(oversupply,2)
+
+q_INA(oversupply,3)
+                (.LO, .L, .UP, .M = 0, 1800000, 3600000, 0)
+   -11896.9852  obj_INA(oversupply)
+        1       res_bal_INA(oversupply,3)
+
+REMAINING 117 ENTRIES SKIPPED
+
+---- reserve_INA  Indonesian reserves by scenario
+
+reserve_INA(oversupply,1)
+                (.LO, .L, .UP, .M = 0, 53200000, +INF, 0)
+        1       res_init_INA(oversupply)
+       -1       res_bal_INA(oversupply,2)
+
+reserve_INA(oversupply,2)
+                (.LO, .L, .UP, .M = 0, 51400000, +INF, 0)
+        1       res_bal_INA(oversupply,2)
+       -1       res_bal_INA(oversupply,3)
+
+reserve_INA(oversupply,3)
+                (.LO, .L, .UP, .M = 0, 49600000, +INF, 0)
+        1       res_bal_INA(oversupply,3)
+       -1       res_bal_INA(oversupply,4)
+
+REMAINING 117 ENTRIES SKIPPED
+
 ---- NPV  net present value (USD)
 
 NPV
                 (.LO, .L, .UP, .M = -INF, 0, +INF, 0)
         1       obj
 
-GAMS 48.6.1  67fbb04b Jan 23, 2025          DAX-DAC arm 64bit/macOS - 10/21/25 17:20:07 Page 5
+
+---- NPV_INA  Indonesian NPV by scenario
+
+NPV_INA(oversupply)
+                (.LO, .L, .UP, .M = -INF, 0, +INF, 0)
+        1       obj_INA(oversupply)
+       -0.25    exp_obj_INA
+
+NPV_INA(balanced)
+                (.LO, .L, .UP, .M = -INF, 0, +INF, 0)
+        1       obj_INA(balanced)
+       -0.4     exp_obj_INA
+
+NPV_INA(supply_constraint)
+                (.LO, .L, .UP, .M = -INF, 0, +INF, 0)
+        1       obj_INA(supply_constraint)
+       -0.2     exp_obj_INA
+
+REMAINING ENTRY SKIPPED
+
+---- expected_NPV_INA  expected Indonesian NPV
+
+expected_NPV_INA
+                (.LO, .L, .UP, .M = -INF, 0, +INF, 0)
+        1       exp_obj_INA
+
+GAMS 48.6.1  67fbb04b Jan 23, 2025          DAX-DAC arm 64bit/macOS - 11/12/25 00:53:54 Page 5
 G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
-Model Statistics    SOLVE hotelling Using NLP From line 79
+Range Statistics    SOLVE hotelling Using NLP From line 139
+
+
+RANGE STATISTICS (ABSOLUTE NON-ZERO FINITE VALUES)
+
+RHS       [min, max] : [ 5.500E+07, 1.310E+08] - Zero values observed as well
+Bound     [min, max] : [ 5.943E+05, 3.600E+06] - Zero values observed as well
+Matrix    [min, max] : [ 1.500E-01, 1.951E+04]
+
+GAMS 48.6.1  67fbb04b Jan 23, 2025          DAX-DAC arm 64bit/macOS - 11/12/25 00:53:54 Page 6
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+Model Statistics    SOLVE hotelling Using NLP From line 139
 
 
 MODEL STATISTICS
 
-BLOCKS OF EQUATIONS           3     SINGLE EQUATIONS           31
-BLOCKS OF VARIABLES           3     SINGLE VARIABLES           61
-NON ZERO ELEMENTS           120     NON LINEAR N-Z              0
+BLOCKS OF EQUATIONS           7     SINGLE EQUATIONS          156
+BLOCKS OF VARIABLES           7     SINGLE VARIABLES          306
+NON ZERO ELEMENTS           605     NON LINEAR N-Z              0
 CODE LENGTH                   0     CONSTANT POOL              16
 
 
-GENERATION TIME      =        0.001 SECONDS      4 MB  48.6.1 67fbb04b DAX-DAC
-GAMS 48.6.1  67fbb04b Jan 23, 2025          DAX-DAC arm 64bit/macOS - 10/21/25 17:20:07 Page 6
+GENERATION TIME      =        0.002 SECONDS      4 MB  48.6.1 67fbb04b DAX-DAC
+GAMS 48.6.1  67fbb04b Jan 23, 2025          DAX-DAC arm 64bit/macOS - 11/12/25 00:53:54 Page 7
 G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
-Solution Report     SOLVE hotelling Using NLP From line 79
+Solution Report     SOLVE hotelling Using NLP From line 139
 
 
                S O L V E      S U M M A R Y
 
      MODEL   hotelling           OBJECTIVE  NPV
      TYPE    NLP                 DIRECTION  MAXIMIZE
-     SOLVER  CONOPT              FROM LINE  79
+     SOLVER  CONOPT              FROM LINE  139
 
 **** SOLVER STATUS     1 Normal Completion
 **** MODEL STATUS      1 Optimal
 **** OBJECTIVE VALUE     134334327670.3441
 
- RESOURCE USAGE, LIMIT          0.024 10000000000.000
+ RESOURCE USAGE, LIMIT          0.015 10000000000.000
  ITERATION COUNT, LIMIT         1    2147483647
  EVALUATION ERRORS              0             0
  
@@ -226,18 +430,20 @@ Solution Report     SOLVE hotelling Using NLP From line 79
                   GAMS Development Corporation
  
  
-    The user model has 31 constraints and 61 variables
-    with 120 Jacobian elements, 0 of which are nonlinear.
+    The user model has 156 constraints and 306 variables
+    with 605 Jacobian elements, 0 of which are nonlinear.
  
     The pre-triangular part of the model has 0 constraints and 30 variables.
-    The post-triangular part of the model has 31 constraints and variables.
+    The post-triangular part of the model has 40 constraints and variables.
+    There are 56 definitional constraints and defined variables.
  
-    Preprocessed model is empty.
+    Preprocessed model has 60 constraints and 180 variables
+    with 236 Jacobian elements, 0 of which are nonlinear.
  
  ** Optimal solution. There are no superbasic variables.
  
  
- CONOPT time Total                            0.005 seconds
+ CONOPT time Total                            0.004 seconds
    of which: Function evaluations             0.000 =  0.0%
              1st Derivative evaluations       0.000 =  0.0%
  
@@ -283,6 +489,151 @@ Solution Report     SOLVE hotelling Using NLP From line 79
 28          .              .              .             EPS         
 29          .              .              .             EPS         
 30          .              .              .             EPS         
+
+---- EQU obj_INA  Indonesian NPV by scenario
+
+                         LOWER          LEVEL          UPPER         MARGINAL
+
+oversupply                 .              .              .             EPS         
+balanced                   .            -0.0001          .             EPS         
+supply_constraint          .            -0.0001          .             EPS         
+ev_boom                    .              .              .             EPS         
+
+                           LOWER          LEVEL          UPPER         MARGINAL
+
+---- EQU exp_obj_I~          .              .              .             EPS         
+
+  exp_obj_INA  expected Indonesian NPV
+
+---- EQU res_init_INA  Indonesian initial reserves
+
+                         LOWER          LEVEL          UPPER         MARGINAL
+
+oversupply          5.5000000E+7   5.5000000E+7   5.5000000E+7         EPS         
+balanced            5.5000000E+7   5.5000000E+7   5.5000000E+7         EPS         
+supply_constraint   5.5000000E+7   5.5000000E+7   5.5000000E+7         EPS         
+ev_boom             5.5000000E+7   5.5000000E+7   5.5000000E+7         EPS         
+
+---- EQU res_bal_INA  Indonesian reserve balance
+
+                            LOWER          LEVEL          UPPER         MARGINAL
+
+oversupply       .2           .              .              .             EPS         
+oversupply       .3           .              .              .             EPS         
+oversupply       .4           .              .              .             EPS         
+oversupply       .5           .              .              .             EPS         
+oversupply       .6           .              .              .             EPS         
+oversupply       .7           .              .              .             EPS         
+oversupply       .8           .              .              .             EPS         
+oversupply       .9           .              .              .             EPS         
+oversupply       .10          .              .              .             EPS         
+oversupply       .11          .              .              .             EPS         
+oversupply       .12          .              .              .             EPS         
+oversupply       .13          .              .              .             EPS         
+oversupply       .14          .              .              .             EPS         
+oversupply       .15          .              .              .             EPS         
+oversupply       .16          .              .              .             EPS         
+oversupply       .17          .              .              .             EPS         
+oversupply       .18          .              .              .             EPS         
+oversupply       .19          .              .              .             EPS         
+oversupply       .20          .              .              .             EPS         
+oversupply       .21          .              .              .             EPS         
+oversupply       .22          .              .              .             EPS         
+oversupply       .23          .              .              .             EPS         
+oversupply       .24          .              .              .             EPS         
+oversupply       .25          .              .              .             EPS         
+oversupply       .26          .              .              .             EPS         
+oversupply       .27          .              .              .             EPS         
+oversupply       .28          .              .              .             EPS         
+oversupply       .29          .              .              .             EPS         
+oversupply       .30          .              .              .             EPS         
+balanced         .2           .              .              .             EPS         
+balanced         .3           .              .              .             EPS         
+balanced         .4           .              .              .             EPS         
+balanced         .5           .              .              .             EPS         
+balanced         .6           .              .              .             EPS         
+balanced         .7           .              .              .             EPS         
+balanced         .8           .              .              .             EPS         
+balanced         .9           .              .              .             EPS         
+balanced         .10          .              .              .             EPS         
+balanced         .11          .              .              .             EPS         
+balanced         .12          .              .              .             EPS         
+balanced         .13          .              .              .             EPS         
+balanced         .14          .              .              .             EPS         
+balanced         .15          .              .              .             EPS         
+balanced         .16          .              .              .             EPS         
+balanced         .17          .              .              .             EPS         
+balanced         .18          .              .              .             EPS         
+balanced         .19          .              .              .             EPS         
+balanced         .20          .              .              .             EPS         
+balanced         .21          .              .              .             EPS         
+balanced         .22          .              .              .             EPS         
+balanced         .23          .              .              .             EPS         
+balanced         .24          .              .              .             EPS         
+balanced         .25          .              .              .             EPS         
+balanced         .26          .              .              .             EPS         
+balanced         .27          .              .              .             EPS         
+balanced         .28          .              .              .             EPS         
+balanced         .29          .              .              .             EPS         
+balanced         .30          .              .              .             EPS         
+supply_constraint.2           .              .              .             EPS         
+supply_constraint.3           .              .              .             EPS         
+supply_constraint.4           .              .              .             EPS         
+supply_constraint.5           .              .              .             EPS         
+supply_constraint.6           .              .              .             EPS         
+supply_constraint.7           .              .              .             EPS         
+supply_constraint.8           .              .              .             EPS         
+supply_constraint.9           .              .              .             EPS         
+supply_constraint.10          .              .              .             EPS         
+supply_constraint.11          .              .              .             EPS         
+supply_constraint.12          .              .              .             EPS         
+supply_constraint.13          .              .              .             EPS         
+supply_constraint.14          .              .              .             EPS         
+supply_constraint.15          .              .              .             EPS         
+supply_constraint.16          .              .              .             EPS         
+supply_constraint.17          .              .              .             EPS         
+supply_constraint.18          .              .              .             EPS         
+supply_constraint.19          .              .              .             EPS         
+supply_constraint.20          .              .              .             EPS         
+supply_constraint.21          .              .              .             EPS         
+supply_constraint.22          .              .              .             EPS         
+supply_constraint.23          .              .              .             EPS         
+supply_constraint.24          .              .              .             EPS         
+supply_constraint.25          .              .              .             EPS         
+supply_constraint.26          .              .              .             EPS         
+supply_constraint.27          .              .              .             EPS         
+supply_constraint.28          .              .              .             EPS         
+supply_constraint.29          .              .              .             EPS         
+supply_constraint.30          .              .              .             EPS         
+ev_boom          .2           .              .              .             EPS         
+ev_boom          .3           .              .              .             EPS         
+ev_boom          .4           .              .              .             EPS         
+ev_boom          .5           .              .              .             EPS         
+ev_boom          .6           .              .              .             EPS         
+ev_boom          .7           .              .              .             EPS         
+ev_boom          .8           .              .              .             EPS         
+ev_boom          .9           .              .              .             EPS         
+ev_boom          .10          .              .              .             EPS         
+ev_boom          .11          .              .              .             EPS         
+ev_boom          .12          .              .              .             EPS         
+ev_boom          .13          .              .              .             EPS         
+ev_boom          .14          .              .              .             EPS         
+ev_boom          .15          .              .              .             EPS         
+ev_boom          .16          .              .              .             EPS         
+ev_boom          .17          .              .              .             EPS         
+ev_boom          .18          .              .              .             EPS         
+ev_boom          .19          .              .              .             EPS         
+ev_boom          .20          .              .              .             EPS         
+ev_boom          .21          .              .              .             EPS         
+ev_boom          .22          .              .              .             EPS         
+ev_boom          .23          .              .              .             EPS         
+ev_boom          .24          .              .              .             EPS         
+ev_boom          .25          .              .              .             EPS         
+ev_boom          .26          .              .              .             EPS         
+ev_boom          .27          .              .              .             EPS         
+ev_boom          .28          .              .              .             EPS         
+ev_boom          .29          .              .              .             EPS         
+ev_boom          .30          .              .              .             EPS         
 
 ---- VAR q  quantity of extraction in period t (tonnes)
 
@@ -354,45 +705,918 @@ Solution Report     SOLVE hotelling Using NLP From line 79
 29          .       1.1380433E+8        +INF             .          
 30          .       1.1321000E+8        +INF             .          
 
+---- VAR q_INA  Indonesian extraction by scenario
+
+                            LOWER          LEVEL          UPPER         MARGINAL
+
+oversupply       .1           .       1800000.0000   3600000.0000          .          
+oversupply       .2           .       1800000.0000   3600000.0000         EPS         
+oversupply       .3           .       1800000.0000   3600000.0000         EPS         
+oversupply       .4           .       1800000.0000   3600000.0000         EPS         
+oversupply       .5           .       1800000.0000   3600000.0000         EPS         
+oversupply       .6           .       1800000.0000   3600000.0000         EPS         
+oversupply       .7           .       1800000.0000   3600000.0000         EPS         
+oversupply       .8           .       1800000.0000   3600000.0000         EPS         
+oversupply       .9           .       1800000.0000   3600000.0000         EPS         
+oversupply       .10          .       1800000.0000   3600000.0000         EPS         
+oversupply       .11          .       1800000.0000   3600000.0000         EPS         
+oversupply       .12          .       1800000.0000   3600000.0000         EPS         
+oversupply       .13          .       1800000.0000   3600000.0000         EPS         
+oversupply       .14          .       1800000.0000   3600000.0000         EPS         
+oversupply       .15          .       1800000.0000   3600000.0000         EPS         
+oversupply       .16          .       1800000.0000   3600000.0000         EPS         
+oversupply       .17          .       1800000.0000   3600000.0000         EPS         
+oversupply       .18          .       1800000.0000   3600000.0000         EPS         
+oversupply       .19          .       1800000.0000   3600000.0000         EPS         
+oversupply       .20          .       1800000.0000   3600000.0000         EPS         
+oversupply       .21          .       1800000.0000   3600000.0000         EPS         
+oversupply       .22          .       1800000.0000   3600000.0000         EPS         
+oversupply       .23          .       1800000.0000   3600000.0000         EPS         
+oversupply       .24          .       1800000.0000   3600000.0000         EPS         
+oversupply       .25          .       1800000.0000   3600000.0000         EPS         
+oversupply       .26          .       1800000.0000   3600000.0000         EPS         
+oversupply       .27          .       1800000.0000   3600000.0000         EPS         
+oversupply       .28          .       1800000.0000   3600000.0000         EPS         
+oversupply       .29          .       1800000.0000   3600000.0000         EPS         
+oversupply       .30          .       1800000.0000   3600000.0000          .          
+balanced         .1           .       1800000.0000   3600000.0000          .          
+balanced         .2           .       1800000.0000   3600000.0000         EPS         
+balanced         .3           .       1800000.0000   3600000.0000         EPS         
+balanced         .4           .       1800000.0000   3600000.0000         EPS         
+balanced         .5           .       1800000.0000   3600000.0000         EPS         
+balanced         .6           .       1800000.0000   3600000.0000         EPS         
+balanced         .7           .       1800000.0000   3600000.0000         EPS         
+balanced         .8           .       1800000.0000   3600000.0000         EPS         
+balanced         .9           .       1800000.0000   3600000.0000         EPS         
+balanced         .10          .       1800000.0000   3600000.0000         EPS         
+balanced         .11          .       1800000.0000   3600000.0000         EPS         
+balanced         .12          .       1800000.0000   3600000.0000         EPS         
+balanced         .13          .       1800000.0000   3600000.0000         EPS         
+balanced         .14          .       1800000.0000   3600000.0000         EPS         
+balanced         .15          .       1800000.0000   3600000.0000         EPS         
+balanced         .16          .       1800000.0000   3600000.0000         EPS         
+balanced         .17          .       1800000.0000   3600000.0000         EPS         
+balanced         .18          .       1800000.0000   3600000.0000         EPS         
+balanced         .19          .       1800000.0000   3600000.0000         EPS         
+balanced         .20          .       1800000.0000   3600000.0000         EPS         
+balanced         .21          .       1800000.0000   3600000.0000         EPS         
+balanced         .22          .       1800000.0000   3600000.0000         EPS         
+balanced         .23          .       1800000.0000   3600000.0000         EPS         
+balanced         .24          .       1800000.0000   3600000.0000         EPS         
+balanced         .25          .       1800000.0000   3600000.0000         EPS         
+balanced         .26          .       1800000.0000   3600000.0000         EPS         
+balanced         .27          .       1800000.0000   3600000.0000         EPS         
+balanced         .28          .       1800000.0000   3600000.0000         EPS         
+balanced         .29          .       1800000.0000   3600000.0000         EPS         
+balanced         .30          .       1800000.0000   3600000.0000          .          
+supply_constraint.1           .       1800000.0000   3600000.0000          .          
+supply_constraint.2           .       1800000.0000   3600000.0000         EPS         
+supply_constraint.3           .       1800000.0000   3600000.0000         EPS         
+supply_constraint.4           .       1800000.0000   3600000.0000         EPS         
+supply_constraint.5           .       1800000.0000   3600000.0000         EPS         
+supply_constraint.6           .       1800000.0000   3600000.0000         EPS         
+supply_constraint.7           .       1800000.0000   3600000.0000         EPS         
+supply_constraint.8           .       1800000.0000   3600000.0000         EPS         
+supply_constraint.9           .       1800000.0000   3600000.0000         EPS         
+supply_constraint.10          .       1800000.0000   3600000.0000         EPS         
+supply_constraint.11          .       1800000.0000   3600000.0000         EPS         
+supply_constraint.12          .       1800000.0000   3600000.0000         EPS         
+supply_constraint.13          .       1800000.0000   3600000.0000         EPS         
+supply_constraint.14          .       1800000.0000   3600000.0000         EPS         
+supply_constraint.15          .       1800000.0000   3600000.0000         EPS         
+supply_constraint.16          .       1800000.0000   3600000.0000         EPS         
+supply_constraint.17          .       1800000.0000   3600000.0000         EPS         
+supply_constraint.18          .       1800000.0000   3600000.0000         EPS         
+supply_constraint.19          .       1800000.0000   3600000.0000         EPS         
+supply_constraint.20          .       1800000.0000   3600000.0000         EPS         
+supply_constraint.21          .       1800000.0000   3600000.0000         EPS         
+supply_constraint.22          .       1800000.0000   3600000.0000         EPS         
+supply_constraint.23          .       1800000.0000   3600000.0000         EPS         
+supply_constraint.24          .       1800000.0000   3600000.0000         EPS         
+supply_constraint.25          .       1800000.0000   3600000.0000         EPS         
+supply_constraint.26          .       1800000.0000   3600000.0000         EPS         
+supply_constraint.27          .       1800000.0000   3600000.0000         EPS         
+supply_constraint.28          .       1800000.0000   3600000.0000         EPS         
+supply_constraint.29          .       1800000.0000   3600000.0000         EPS         
+supply_constraint.30          .       1800000.0000   3600000.0000          .          
+ev_boom          .1           .       1800000.0000   3600000.0000          .          
+ev_boom          .2           .       1800000.0000   3600000.0000         EPS         
+ev_boom          .3           .       1800000.0000   3600000.0000         EPS         
+ev_boom          .4           .       1800000.0000   3600000.0000         EPS         
+ev_boom          .5           .       1800000.0000   3600000.0000         EPS         
+ev_boom          .6           .       1800000.0000   3600000.0000         EPS         
+ev_boom          .7           .       1800000.0000   3600000.0000         EPS         
+ev_boom          .8           .       1800000.0000   3600000.0000         EPS         
+ev_boom          .9           .       1800000.0000   3600000.0000         EPS         
+ev_boom          .10          .       1800000.0000   3600000.0000         EPS         
+ev_boom          .11          .       1800000.0000   3600000.0000         EPS         
+ev_boom          .12          .       1800000.0000   3600000.0000         EPS         
+ev_boom          .13          .       1800000.0000   3600000.0000         EPS         
+ev_boom          .14          .       1800000.0000   3600000.0000         EPS         
+ev_boom          .15          .       1800000.0000   3600000.0000         EPS         
+ev_boom          .16          .       1800000.0000   3600000.0000         EPS         
+ev_boom          .17          .       1800000.0000   3600000.0000         EPS         
+ev_boom          .18          .       1800000.0000   3600000.0000         EPS         
+ev_boom          .19          .       1800000.0000   3600000.0000         EPS         
+ev_boom          .20          .       1800000.0000   3600000.0000         EPS         
+ev_boom          .21          .       1800000.0000   3600000.0000         EPS         
+ev_boom          .22          .       1800000.0000   3600000.0000         EPS         
+ev_boom          .23          .       1800000.0000   3600000.0000         EPS         
+ev_boom          .24          .       1800000.0000   3600000.0000         EPS         
+ev_boom          .25          .       1800000.0000   3600000.0000         EPS         
+ev_boom          .26          .       1800000.0000   3600000.0000         EPS         
+ev_boom          .27          .       1800000.0000   3600000.0000         EPS         
+ev_boom          .28          .       1800000.0000   3600000.0000         EPS         
+ev_boom          .29          .       1800000.0000   3600000.0000         EPS         
+ev_boom          .30          .       1800000.0000   3600000.0000          .          
+
+---- VAR reserve_INA  Indonesian reserves by scenario
+
+                            LOWER          LEVEL          UPPER         MARGINAL
+
+oversupply       .1           .       5.3200000E+7        +INF             .          
+oversupply       .2           .       5.1400000E+7        +INF             .          
+oversupply       .3           .       4.9600000E+7        +INF             .          
+oversupply       .4           .       4.7800000E+7        +INF             .          
+oversupply       .5           .       4.6000000E+7        +INF             .          
+oversupply       .6           .       4.4200000E+7        +INF             .          
+oversupply       .7           .       4.2400000E+7        +INF             .          
+oversupply       .8           .       4.0600000E+7        +INF             .          
+oversupply       .9           .       3.8800000E+7        +INF             .          
+oversupply       .10          .       3.7000000E+7        +INF             .          
+oversupply       .11          .       3.5200000E+7        +INF             .          
+oversupply       .12          .       3.3400000E+7        +INF             .          
+oversupply       .13          .       3.1600000E+7        +INF             .          
+oversupply       .14          .       2.9800000E+7        +INF             .          
+oversupply       .15          .       2.8000000E+7        +INF             .          
+oversupply       .16          .       2.6200000E+7        +INF             .          
+oversupply       .17          .       2.4400000E+7        +INF             .          
+oversupply       .18          .       2.2600000E+7        +INF             .          
+oversupply       .19          .       2.0800000E+7        +INF             .          
+oversupply       .20          .       1.9000000E+7        +INF             .          
+oversupply       .21          .       1.7200000E+7        +INF             .          
+oversupply       .22          .       1.5400000E+7        +INF             .          
+oversupply       .23          .       1.3600000E+7        +INF             .          
+oversupply       .24          .       1.1800000E+7        +INF             .          
+oversupply       .25          .       1.0000000E+7        +INF             .          
+oversupply       .26          .       8200000.0000        +INF             .          
+oversupply       .27          .       6400000.0000        +INF             .          
+oversupply       .28          .       4600000.0000        +INF             .          
+oversupply       .29          .       2800000.0000        +INF            EPS         
+oversupply       .30          .       1000000.0000        +INF            EPS         
+balanced         .1           .       5.3200000E+7        +INF             .          
+balanced         .2           .       5.1400000E+7        +INF             .          
+balanced         .3           .       4.9600000E+7        +INF             .          
+balanced         .4           .       4.7800000E+7        +INF             .          
+balanced         .5           .       4.6000000E+7        +INF             .          
+balanced         .6           .       4.4200000E+7        +INF             .          
+balanced         .7           .       4.2400000E+7        +INF             .          
+balanced         .8           .       4.0600000E+7        +INF             .          
+balanced         .9           .       3.8800000E+7        +INF             .          
+balanced         .10          .       3.7000000E+7        +INF             .          
+balanced         .11          .       3.5200000E+7        +INF             .          
+balanced         .12          .       3.3400000E+7        +INF             .          
+balanced         .13          .       3.1600000E+7        +INF             .          
+balanced         .14          .       2.9800000E+7        +INF             .          
+balanced         .15          .       2.8000000E+7        +INF             .          
+balanced         .16          .       2.6200000E+7        +INF             .          
+balanced         .17          .       2.4400000E+7        +INF             .          
+balanced         .18          .       2.2600000E+7        +INF             .          
+balanced         .19          .       2.0800000E+7        +INF             .          
+balanced         .20          .       1.9000000E+7        +INF             .          
+balanced         .21          .       1.7200000E+7        +INF             .          
+balanced         .22          .       1.5400000E+7        +INF             .          
+balanced         .23          .       1.3600000E+7        +INF             .          
+balanced         .24          .       1.1800000E+7        +INF             .          
+balanced         .25          .       1.0000000E+7        +INF             .          
+balanced         .26          .       8200000.0000        +INF             .          
+balanced         .27          .       6400000.0000        +INF             .          
+balanced         .28          .       4600000.0000        +INF             .          
+balanced         .29          .       2800000.0000        +INF            EPS         
+balanced         .30          .       1000000.0000        +INF            EPS         
+supply_constraint.1           .       5.3200000E+7        +INF             .          
+supply_constraint.2           .       5.1400000E+7        +INF             .          
+supply_constraint.3           .       4.9600000E+7        +INF             .          
+supply_constraint.4           .       4.7800000E+7        +INF             .          
+supply_constraint.5           .       4.6000000E+7        +INF             .          
+supply_constraint.6           .       4.4200000E+7        +INF             .          
+supply_constraint.7           .       4.2400000E+7        +INF             .          
+supply_constraint.8           .       4.0600000E+7        +INF             .          
+supply_constraint.9           .       3.8800000E+7        +INF             .          
+supply_constraint.10          .       3.7000000E+7        +INF             .          
+supply_constraint.11          .       3.5200000E+7        +INF             .          
+supply_constraint.12          .       3.3400000E+7        +INF             .          
+supply_constraint.13          .       3.1600000E+7        +INF             .          
+supply_constraint.14          .       2.9800000E+7        +INF             .          
+supply_constraint.15          .       2.8000000E+7        +INF             .          
+supply_constraint.16          .       2.6200000E+7        +INF             .          
+supply_constraint.17          .       2.4400000E+7        +INF             .          
+supply_constraint.18          .       2.2600000E+7        +INF             .          
+supply_constraint.19          .       2.0800000E+7        +INF             .          
+supply_constraint.20          .       1.9000000E+7        +INF             .          
+supply_constraint.21          .       1.7200000E+7        +INF             .          
+supply_constraint.22          .       1.5400000E+7        +INF             .          
+supply_constraint.23          .       1.3600000E+7        +INF             .          
+supply_constraint.24          .       1.1800000E+7        +INF             .          
+supply_constraint.25          .       1.0000000E+7        +INF             .          
+supply_constraint.26          .       8200000.0000        +INF             .          
+supply_constraint.27          .       6400000.0000        +INF             .          
+supply_constraint.28          .       4600000.0000        +INF             .          
+supply_constraint.29          .       2800000.0000        +INF            EPS         
+supply_constraint.30          .       1000000.0000        +INF            EPS         
+ev_boom          .1           .       5.3200000E+7        +INF             .          
+ev_boom          .2           .       5.1400000E+7        +INF             .          
+ev_boom          .3           .       4.9600000E+7        +INF             .          
+ev_boom          .4           .       4.7800000E+7        +INF             .          
+ev_boom          .5           .       4.6000000E+7        +INF             .          
+ev_boom          .6           .       4.4200000E+7        +INF             .          
+ev_boom          .7           .       4.2400000E+7        +INF             .          
+ev_boom          .8           .       4.0600000E+7        +INF             .          
+ev_boom          .9           .       3.8800000E+7        +INF             .          
+ev_boom          .10          .       3.7000000E+7        +INF             .          
+ev_boom          .11          .       3.5200000E+7        +INF             .          
+ev_boom          .12          .       3.3400000E+7        +INF             .          
+ev_boom          .13          .       3.1600000E+7        +INF             .          
+ev_boom          .14          .       2.9800000E+7        +INF             .          
+ev_boom          .15          .       2.8000000E+7        +INF             .          
+ev_boom          .16          .       2.6200000E+7        +INF             .          
+ev_boom          .17          .       2.4400000E+7        +INF             .          
+ev_boom          .18          .       2.2600000E+7        +INF             .          
+ev_boom          .19          .       2.0800000E+7        +INF             .          
+ev_boom          .20          .       1.9000000E+7        +INF             .          
+ev_boom          .21          .       1.7200000E+7        +INF             .          
+ev_boom          .22          .       1.5400000E+7        +INF             .          
+ev_boom          .23          .       1.3600000E+7        +INF             .          
+ev_boom          .24          .       1.1800000E+7        +INF             .          
+ev_boom          .25          .       1.0000000E+7        +INF             .          
+ev_boom          .26          .       8200000.0000        +INF             .          
+ev_boom          .27          .       6400000.0000        +INF             .          
+ev_boom          .28          .       4600000.0000        +INF             .          
+ev_boom          .29          .       2800000.0000        +INF            EPS         
+ev_boom          .30          .       1000000.0000        +INF            EPS         
+
                            LOWER          LEVEL          UPPER         MARGINAL
 
 ---- VAR NPV               -INF      1.343343E+11        +INF             .          
 
   NPV  net present value (USD)
 
+---- VAR NPV_INA  Indonesian NPV by scenario
+
+                         LOWER          LEVEL          UPPER         MARGINAL
+
+oversupply               -INF      2.925074E+11        +INF             .          
+balanced                 -INF      5.200026E+11        +INF             .          
+supply_constraint        -INF      6.785697E+11        +INF             .          
+ev_boom                  -INF      9.036115E+11        +INF             .          
+
+                           LOWER          LEVEL          UPPER         MARGINAL
+
+---- VAR expected_~        -INF      5.523836E+11        +INF             .          
+
+  expected_NPV_INA  expected Indonesian NPV
+
 
 **** REPORT SUMMARY :        0     NONOPT
                              0 INFEASIBLE
                              0  UNBOUNDED
                              0     ERRORS
-GAMS 48.6.1  67fbb04b Jan 23, 2025          DAX-DAC arm 64bit/macOS - 10/21/25 17:20:07 Page 7
+GAMS 48.6.1  67fbb04b Jan 23, 2025          DAX-DAC arm 64bit/macOS - 11/12/25 00:53:54 Page 8
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+Equation Listing    SOLVE hotelling_INA Using NLP From line 143
+
+
+---- obj_INA  =E=  Indonesian NPV by scenario
+
+obj_INA(oversupply)..  - 14003.11*q_INA(oversupply,1) - 12907.634952381*q_INA(oversupply,2) - 11896.9852145125*q_INA(oversupply,3) - 10964.6331178318*q_INA(oversupply,4) - 10104.5514250865*q_INA(oversupply,5) - 9311.17505532399*q_INA(oversupply,6) - 8579.36573206687*q_INA(oversupply,7) - 7904.37933162454*q_INA(oversupply,8) - 7281.83572549705*q_INA(oversupply,9) - 6707.69092654407*q_INA(oversupply,10) - 6178.21136310592*q_INA(oversupply,11) - 5689.95011867288*q_INA(oversupply,12) - 5239.7249870858*q_INA(oversupply,13) - 4824.59820469324*q_INA(oversupply,14) - 4441.85773146008*q_INA(oversupply,15) - 4088.99996278706*q_INA(oversupply,16) - 3763.71376281973*q_INA(oversupply,17) - 3463.86571835752*q_INA(oversupply,18) - 3187.48652016997*q_INA(oversupply,19) - 2932.758385637*q_INA(oversupply,20) - 2698.00344319751*q_INA(oversupply,21) - 2481.67300515752*q_INA(oversupply,22) - 2282.33766101292*q_INA(oversupply,23) - 2098.67812861899*q_INA(oversupply,24) - 1929.47680532049*q_INA(oversupply,25) - 1773.60996557371*q_INA(oversupply,26) - 1630.04055567197*q_INA(oversupply,27) - 1497.81153995552*q_INA(oversupply,28) - 1376.03975636843*q_INA(oversupply,29) - 1263.91024244103*q_INA(oversupply,30) + NPV_INA(oversupply) =E= 0 ; (LHS = 6.103515625E-5, INFES = 6.103515625E-5 ****)
+     
+obj_INA(balanced)..  - 14003.11*q_INA(balanced,1) - 13622.0687619048*q_INA(balanced,2) - 13251.0073868481*q_INA(balanced,3) - 12889.6839277659*q_INA(balanced,4) - 12537.8612936113*q_INA(balanced,5) - 12195.3072085518*q_INA(balanced,6) - 11861.7941676687*q_INA(balanced,7) - 11537.0993894808*q_INA(balanced,8) - 11221.0047655933*q_INA(balanced,9) - 10913.2968077579*q_INA(balanced,10) - 10613.7665926071*q_INA(balanced,11) - 10322.2097043143*q_INA(balanced,12) - 10038.4261754117*q_INA(balanced,13) - 9762.22042598429*q_INA(balanced,14) - 9493.40120144465*q_INA(balanced,15) - 9231.78150907948*q_INA(balanced,16) - 8977.17855354561*q_INA(balanced,17) - 8729.41367148224*q_INA(balanced,18) - 8488.31226539438*q_INA(balanced,19) - 8253.70373695201*q_INA(balanced,20) - 8025.42141983942*q_INA(balanced,21) - 7803.30251227968*q_INA(balanced,22) - 7587.18800935057*q_INA(balanced,23) - 7376.92263519934*q_INA(balanced,24) - 7172.35477525644*q_INA(balanced,25) - 6973.33640854021*q_INA(balanced,26) - 6779.72304013807*q_INA(balanced,27) - 6591.3736339427*q_INA(balanced,28) - 6408.15054571577*q_INA(balanced,29) - 6229.91945654566*q_INA(balanced,30) + NPV_INA(balanced) =E= 0 ; (LHS = -6.103515625E-5, INFES = 6.103515625E-5 ****)
+     
+obj_INA(supply_constraint)..  - 14003.11*q_INA(supply_constraint,1) - 13907.8422857143*q_INA(supply_constraint,2) - 13811.6678240363*q_INA(supply_constraint,3) - 13714.6816344153*q_INA(supply_constraint,4) - 13616.9737178411*q_INA(supply_constraint,5) - 13518.6293005204*q_INA(supply_constraint,6) - 13419.7290659047*q_INA(supply_constraint,7) - 13320.3493756251*q_INA(supply_constraint,8) - 13220.5624798622*q_INA(supply_constraint,9) - 13120.4367176551*q_INA(supply_constraint,10) - 13020.0367076286*q_INA(supply_constraint,11) - 12919.4235295956*q_INA(supply_constraint,12) - 12818.6548974694*q_INA(supply_constraint,13) - 12717.7853239003*q_INA(supply_constraint,14) - 12616.8662770306*q_INA(supply_constraint,15) - 12515.9463297444*q_INA(supply_constraint,16) - 12415.0713017693*q_INA(supply_constraint,17) - 12314.2843949712*q_INA(supply_constraint,18) - 12213.6263221662*q_INA(supply_constraint,19) - 12113.1354297595*q_INA(supply_constraint,20) - 12012.8478145053*q_INA(supply_constraint,21) - 11912.7974346671*q_INA(supply_constraint,22) - 11813.0162158471*q_INA(supply_constraint,23) - 11713.5341517375*q_INA(supply_constraint,24) - 11614.3794000371*q_INA(supply_constraint,25) - 11515.5783737618*q_INA(supply_constraint,26) - 11417.1558281716*q_INA(supply_constraint,27) - 11319.1349435204*q_INA(supply_constraint,28) - 11221.5374038298*q_INA(supply_constraint,29) - 11124.3834718749*q_INA(supply_constraint,30) + NPV_INA(supply_constraint) =E= 0 ; (LHS = 0)
+     
+REMAINING ENTRY SKIPPED
+
+
+---- exp_obj_INA  =E=  expected Indonesian NPV
+
+exp_obj_INA..  - 0.25*NPV_INA(oversupply) - 0.4*NPV_INA(balanced) - 0.2*NPV_INA(supply_constraint) - 0.15*NPV_INA(ev_boom) + expected_NPV_INA =E= 0 ; (LHS = 0)
+     
+
+---- res_init_INA  =E=  Indonesian initial reserves
+
+res_init_INA(oversupply)..  q_INA(oversupply,1) + reserve_INA(oversupply,1) =E= 55000000 ; (LHS = 55000000)
+     
+res_init_INA(balanced)..  q_INA(balanced,1) + reserve_INA(balanced,1) =E= 55000000 ; (LHS = 55000000)
+     
+res_init_INA(supply_constraint)..  q_INA(supply_constraint,1) + reserve_INA(supply_constraint,1) =E= 55000000 ; (LHS = 55000000)
+     
+REMAINING ENTRY SKIPPED
+
+
+---- res_bal_INA  =E=  Indonesian reserve balance
+
+res_bal_INA(oversupply,2)..  q_INA(oversupply,2) - reserve_INA(oversupply,1) + reserve_INA(oversupply,2) =E= 0 ; (LHS = 0)
+     
+res_bal_INA(oversupply,3)..  q_INA(oversupply,3) - reserve_INA(oversupply,2) + reserve_INA(oversupply,3) =E= 0 ; (LHS = 0)
+     
+res_bal_INA(oversupply,4)..  q_INA(oversupply,4) - reserve_INA(oversupply,3) + reserve_INA(oversupply,4) =E= 0 ; (LHS = 0)
+     
+REMAINING 113 ENTRIES SKIPPED
+
+GAMS 48.6.1  67fbb04b Jan 23, 2025          DAX-DAC arm 64bit/macOS - 11/12/25 00:53:54 Page 9
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+Column Listing      SOLVE hotelling_INA Using NLP From line 143
+
+
+---- q_INA  Indonesian extraction by scenario
+
+q_INA(oversupply,1)
+                (.LO, .L, .UP, .M = 0, 1800000, 3600000, 0)
+   -14003.11    obj_INA(oversupply)
+        1       res_init_INA(oversupply)
+
+q_INA(oversupply,2)
+                (.LO, .L, .UP, .M = 0, 1800000, 3600000, EPS)
+   -12907.635   obj_INA(oversupply)
+        1       res_bal_INA(oversupply,2)
+
+q_INA(oversupply,3)
+                (.LO, .L, .UP, .M = 0, 1800000, 3600000, EPS)
+   -11896.9852  obj_INA(oversupply)
+        1       res_bal_INA(oversupply,3)
+
+REMAINING 117 ENTRIES SKIPPED
+
+---- reserve_INA  Indonesian reserves by scenario
+
+reserve_INA(oversupply,1)
+                (.LO, .L, .UP, .M = 0, 53200000, +INF, 0)
+        1       res_init_INA(oversupply)
+       -1       res_bal_INA(oversupply,2)
+
+reserve_INA(oversupply,2)
+                (.LO, .L, .UP, .M = 0, 51400000, +INF, 0)
+        1       res_bal_INA(oversupply,2)
+       -1       res_bal_INA(oversupply,3)
+
+reserve_INA(oversupply,3)
+                (.LO, .L, .UP, .M = 0, 49600000, +INF, 0)
+        1       res_bal_INA(oversupply,3)
+       -1       res_bal_INA(oversupply,4)
+
+REMAINING 117 ENTRIES SKIPPED
+
+---- NPV_INA  Indonesian NPV by scenario
+
+NPV_INA(oversupply)
+                (.LO, .L, .UP, .M = -INF, 292507396810.156, +INF, 0)
+        1       obj_INA(oversupply)
+       -0.25    exp_obj_INA
+
+NPV_INA(balanced)
+                (.LO, .L, .UP, .M = -INF, 520002611967.971, +INF, 0)
+        1       obj_INA(balanced)
+       -0.4     exp_obj_INA
+
+NPV_INA(supply_constraint)
+                (.LO, .L, .UP, .M = -INF, 678569720316.412, +INF, 0)
+        1       obj_INA(supply_constraint)
+       -0.2     exp_obj_INA
+
+REMAINING ENTRY SKIPPED
+
+---- expected_NPV_INA  expected Indonesian NPV
+
+expected_NPV_INA
+                (.LO, .L, .UP, .M = -INF, 552383568589.431, +INF, 0)
+        1       exp_obj_INA
+
+GAMS 48.6.1  67fbb04b Jan 23, 2025          DAX-DAC arm 64bit/macOS - 11/12/25 00:53:54 Page 10
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+Range Statistics    SOLVE hotelling_INA Using NLP From line 143
+
+
+RANGE STATISTICS (ABSOLUTE NON-ZERO FINITE VALUES)
+
+RHS       [min, max] : [ 5.500E+07, 5.500E+07] - Zero values observed as well
+Bound     [min, max] : [ 3.600E+06, 3.600E+06] - Zero values observed as well
+Matrix    [min, max] : [ 1.500E-01, 1.951E+04]
+
+GAMS 48.6.1  67fbb04b Jan 23, 2025          DAX-DAC arm 64bit/macOS - 11/12/25 00:53:54 Page 11
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+Model Statistics    SOLVE hotelling_INA Using NLP From line 143
+
+
+MODEL STATISTICS
+
+BLOCKS OF EQUATIONS           4     SINGLE EQUATIONS          125
+BLOCKS OF VARIABLES           4     SINGLE VARIABLES          245
+NON ZERO ELEMENTS           485     NON LINEAR N-Z              0
+CODE LENGTH                   0     CONSTANT POOL              16
+
+
+GENERATION TIME      =        0.001 SECONDS      4 MB  48.6.1 67fbb04b DAX-DAC
+GAMS 48.6.1  67fbb04b Jan 23, 2025          DAX-DAC arm 64bit/macOS - 11/12/25 00:53:54 Page 12
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+Solution Report     SOLVE hotelling_INA Using NLP From line 143
+
+
+               S O L V E      S U M M A R Y
+
+     MODEL   hotelling_INA       OBJECTIVE  expected_NPV_INA
+     TYPE    NLP                 DIRECTION  MAXIMIZE
+     SOLVER  CONOPT              FROM LINE  143
+
+**** SOLVER STATUS     1 Normal Completion
+**** MODEL STATUS      1 Optimal
+**** OBJECTIVE VALUE     664897411670.7666
+
+ RESOURCE USAGE, LIMIT          0.005 10000000000.000
+ ITERATION COUNT, LIMIT         6    2147483647
+ EVALUATION ERRORS              0             0
+ 
+ 
+    C O N O P T   version 4.35
+    Copyright (C) GAMS Software GmbH
+                  GAMS Development Corporation
+ 
+ 
+    The user model has 125 constraints and 245 variables
+    with 485 Jacobian elements, 0 of which are nonlinear.
+ 
+    The post-triangular part of the model has 9 constraints and variables.
+    There are 56 definitional constraints and defined variables.
+ 
+    Preprocessed model has 60 constraints and 180 variables
+    with 236 Jacobian elements, 0 of which are nonlinear.
+ 
+ ** Optimal solution. There are no superbasic variables.
+ 
+ 
+ CONOPT time Total                            0.002 seconds
+   of which: Function evaluations             0.000 =  0.0%
+             1st Derivative evaluations       0.000 =  0.0%
+ 
+
+---- EQU obj_INA  Indonesian NPV by scenario
+
+                         LOWER          LEVEL          UPPER         MARGINAL
+
+oversupply                 .              .              .             0.2500      
+balanced                   .              .              .             0.4000      
+supply_constraint          .              .              .             0.2000      
+ev_boom                    .              .              .             0.1500      
+
+                           LOWER          LEVEL          UPPER         MARGINAL
+
+---- EQU exp_obj_I~          .              .              .             1.0000      
+
+  exp_obj_INA  expected Indonesian NPV
+
+---- EQU res_init_INA  Indonesian initial reserves
+
+                         LOWER          LEVEL          UPPER         MARGINAL
+
+oversupply          5.5000000E+7   5.5000000E+7   5.5000000E+7      1022.2500      
+balanced            5.5000000E+7   5.5000000E+7   5.5000000E+7      3692.7126      
+supply_constraint   5.5000000E+7   5.5000000E+7   5.5000000E+7      2503.1893      
+ev_boom             5.5000000E+7   5.5000000E+7   5.5000000E+7      2494.0703      
+
+---- EQU res_bal_INA  Indonesian reserve balance
+
+                            LOWER          LEVEL          UPPER         MARGINAL
+
+oversupply       .2           .              .              .          1022.2500      
+oversupply       .3           .              .              .          1022.2500      
+oversupply       .4           .              .              .          1022.2500      
+oversupply       .5           .              .              .          1022.2500      
+oversupply       .6           .              .              .          1022.2500      
+oversupply       .7           .              .              .          1022.2500      
+oversupply       .8           .              .              .          1022.2500      
+oversupply       .9           .              .              .          1022.2500      
+oversupply       .10          .              .              .          1022.2500      
+oversupply       .11          .              .              .          1022.2500      
+oversupply       .12          .              .              .          1022.2500      
+oversupply       .13          .              .              .          1022.2500      
+oversupply       .14          .              .              .          1022.2500      
+oversupply       .15          .              .              .          1022.2500      
+oversupply       .16          .              .              .          1022.2500      
+oversupply       .17          .              .              .          1022.2500      
+oversupply       .18          .              .              .          1022.2500      
+oversupply       .19          .              .              .           796.8716      
+oversupply       .20          .              .              .           796.8716      
+oversupply       .21          .              .              .           674.5009      
+oversupply       .22          .              .              .           674.5009      
+oversupply       .23          .              .              .           674.5009      
+oversupply       .24          .              .              .           674.5009      
+oversupply       .25          .              .              .           674.5009      
+oversupply       .26          .              .              .           443.4025      
+oversupply       .27          .              .              .           443.4025      
+oversupply       .28          .              .              .           443.4025      
+oversupply       .29          .              .              .           443.4025      
+oversupply       .30          .              .              .           443.4025      
+balanced         .2           .              .              .          3692.7126      
+balanced         .3           .              .              .          3692.7126      
+balanced         .4           .              .              .          3692.7126      
+balanced         .5           .              .              .          3692.7126      
+balanced         .6           .              .              .          3692.7126      
+balanced         .7           .              .              .          3692.7126      
+balanced         .8           .              .              .          3692.7126      
+balanced         .9           .              .              .          3692.7126      
+balanced         .10          .              .              .          3692.7126      
+balanced         .11          .              .              .          3692.7126      
+balanced         .12          .              .              .          3692.7126      
+balanced         .13          .              .              .          3692.7126      
+balanced         .14          .              .              .          3692.7126      
+balanced         .15          .              .              .          3692.7126      
+balanced         .16          .              .              .          3692.7126      
+balanced         .17          .              .              .          3692.7126      
+balanced         .18          .              .              .          3692.7126      
+balanced         .19          .              .              .          3692.7126      
+balanced         .20          .              .              .          3692.7126      
+balanced         .21          .              .              .          3210.1686      
+balanced         .22          .              .              .          3210.1686      
+balanced         .23          .              .              .          3210.1686      
+balanced         .24          .              .              .          2950.7691      
+balanced         .25          .              .              .          2950.7691      
+balanced         .26          .              .              .          2789.3346      
+balanced         .27          .              .              .          2789.3346      
+balanced         .28          .              .              .          2789.3346      
+balanced         .29          .              .              .          2789.3346      
+balanced         .30          .              .              .          2789.3346      
+supply_constraint.2           .              .              .          2503.1893      
+supply_constraint.3           .              .              .          2503.1893      
+supply_constraint.4           .              .              .          2503.1893      
+supply_constraint.5           .              .              .          2503.1893      
+supply_constraint.6           .              .              .          2503.1893      
+supply_constraint.7           .              .              .          2503.1893      
+supply_constraint.8           .              .              .          2503.1893      
+supply_constraint.9           .              .              .          2503.1893      
+supply_constraint.10          .              .              .          2503.1893      
+supply_constraint.11          .              .              .          2503.1893      
+supply_constraint.12          .              .              .          2503.1893      
+supply_constraint.13          .              .              .          2503.1893      
+supply_constraint.14          .              .              .          2503.1893      
+supply_constraint.15          .              .              .          2503.1893      
+supply_constraint.16          .              .              .          2503.1893      
+supply_constraint.17          .              .              .          2503.1893      
+supply_constraint.18          .              .              .          2503.1893      
+supply_constraint.19          .              .              .          2503.1893      
+supply_constraint.20          .              .              .          2503.1893      
+supply_constraint.21          .              .              .          2503.1893      
+supply_constraint.22          .              .              .          2503.1893      
+supply_constraint.23          .              .              .          2503.1893      
+supply_constraint.24          .              .              .          2503.1893      
+supply_constraint.25          .              .              .          2503.1893      
+supply_constraint.26          .              .              .          2503.1893      
+supply_constraint.27          .              .              .          2503.1893      
+supply_constraint.28          .              .              .          2503.1893      
+supply_constraint.29          .              .              .          2503.1893      
+supply_constraint.30          .              .              .          2503.1893      
+ev_boom          .2           .              .              .          2494.0703      
+ev_boom          .3           .              .              .          2494.0703      
+ev_boom          .4           .              .              .          2494.0703      
+ev_boom          .5           .              .              .          2494.0703      
+ev_boom          .6           .              .              .          2494.0703      
+ev_boom          .7           .              .              .          2494.0703      
+ev_boom          .8           .              .              .          2494.0703      
+ev_boom          .9           .              .              .          2494.0703      
+ev_boom          .10          .              .              .          2494.0703      
+ev_boom          .11          .              .              .          2494.0703      
+ev_boom          .12          .              .              .          2494.0703      
+ev_boom          .13          .              .              .          2494.0703      
+ev_boom          .14          .              .              .          2494.0703      
+ev_boom          .15          .              .              .          2494.0703      
+ev_boom          .16          .              .              .          2494.0703      
+ev_boom          .17          .              .              .          2494.0703      
+ev_boom          .18          .              .              .          2494.0703      
+ev_boom          .19          .              .              .          2494.0703      
+ev_boom          .20          .              .              .          2494.0703      
+ev_boom          .21          .              .              .          2494.0703      
+ev_boom          .22          .              .              .          2494.0703      
+ev_boom          .23          .              .              .          2494.0703      
+ev_boom          .24          .              .              .          2494.0703      
+ev_boom          .25          .              .              .          2494.0703      
+ev_boom          .26          .              .              .          2494.0703      
+ev_boom          .27          .              .              .          2494.0703      
+ev_boom          .28          .              .              .          2494.0703      
+ev_boom          .29          .              .              .          2494.0703      
+ev_boom          .30          .              .              .          2494.0703      
+
+---- VAR q_INA  Indonesian extraction by scenario
+
+                            LOWER          LEVEL          UPPER         MARGINAL
+
+oversupply       .1           .       3600000.0000   3600000.0000      2478.5275      
+oversupply       .2           .       3600000.0000   3600000.0000      2204.6587      
+oversupply       .3           .       3600000.0000   3600000.0000      1951.9963      
+oversupply       .4           .       3600000.0000   3600000.0000      1718.9083      
+oversupply       .5           .       3600000.0000   3600000.0000      1503.8879      
+oversupply       .6           .       3600000.0000   3600000.0000      1305.5438      
+oversupply       .7           .       3600000.0000   3600000.0000      1122.5914      
+oversupply       .8           .       3600000.0000   3600000.0000       953.8448      
+oversupply       .9           .       3600000.0000   3600000.0000       798.2089      
+oversupply       .10          .       3600000.0000   3600000.0000       654.6727      
+oversupply       .11          .       3600000.0000   3600000.0000       522.3029      
+oversupply       .12          .       3600000.0000   3600000.0000       400.2375      
+oversupply       .13          .       3600000.0000   3600000.0000       287.6813      
+oversupply       .14          .       3600000.0000   3600000.0000       183.8996      
+oversupply       .15          .       3600000.0000   3600000.0000        88.2144      
+oversupply       .16          .       1000000.0000   3600000.0000          .          
+oversupply       .17          .              .       3600000.0000       -81.3215      
+oversupply       .18          .              .       3600000.0000      -156.2836      
+oversupply       .19          .       6.984919E-10   3600000.0000          .          
+oversupply       .20          .              .       3600000.0000       -63.6820      
+oversupply       .21          .       4.656613E-10   3600000.0000          .          
+oversupply       .22          .              .       3600000.0000       -54.0826      
+oversupply       .23          .              .       3600000.0000      -103.9164      
+oversupply       .24          .              .       3600000.0000      -149.8313      
+oversupply       .25          .              .       3600000.0000      -192.1317      
+oversupply       .26          .              .       3600000.0000          .          
+oversupply       .27          .              .       3600000.0000       -35.8924      
+oversupply       .28          .              .       3600000.0000       -68.9496      
+oversupply       .29          .              .       3600000.0000       -99.3926      
+oversupply       .30          .              .       3600000.0000      -127.4249      
+balanced         .1           .       3600000.0000   3600000.0000      1908.5314      
+balanced         .2           .       3600000.0000   3600000.0000      1756.1149      
+balanced         .3           .       3600000.0000   3600000.0000      1607.6904      
+balanced         .4           .       3600000.0000   3600000.0000      1463.1610      
+balanced         .5           .       3600000.0000   3600000.0000      1322.4319      
+balanced         .6           .       3600000.0000   3600000.0000      1185.4103      
+balanced         .7           .       3600000.0000   3600000.0000      1052.0051      
+balanced         .8           .       3600000.0000   3600000.0000       922.1272      
+balanced         .9           .       3600000.0000   3600000.0000       795.6893      
+balanced         .10          .       3600000.0000   3600000.0000       672.6061      
+balanced         .11          .       3600000.0000   3600000.0000       552.7940      
+balanced         .12          .       3600000.0000   3600000.0000       436.1713      
+balanced         .13          .       3600000.0000   3600000.0000       322.6579      
+balanced         .14          .       3600000.0000   3600000.0000       212.1756      
+balanced         .15          .       3600000.0000   3600000.0000       104.6479      
+balanced         .16          .       1000000.0000   3600000.0000          .          
+balanced         .17          .              .       3600000.0000      -101.8412      
+balanced         .18          .              .       3600000.0000      -200.9471      
+balanced         .19          .              .       3600000.0000      -297.3877      
+balanced         .20          .              .       3600000.0000      -391.2311      
+balanced         .21          .       4.656613E-10   3600000.0000          .          
+balanced         .22          .              .       3600000.0000       -88.8476      
+balanced         .23          .              .       3600000.0000      -175.2934      
+balanced         .24          .              .       3600000.0000          .          
+balanced         .25          .              .       3600000.0000       -81.8271      
+balanced         .26          .              .       3600000.0000          .          
+balanced         .27          .              .       3600000.0000       -77.4453      
+balanced         .28          .              .       3600000.0000      -152.7851      
+balanced         .29          .              .       3600000.0000      -226.0743      
+balanced         .30          .              .       3600000.0000      -297.3668      
+supply_constraint.1           .       3600000.0000   3600000.0000       297.4327      
+supply_constraint.2           .       3600000.0000   3600000.0000       278.3792      
+supply_constraint.3           .       3600000.0000   3600000.0000       259.1443      
+supply_constraint.4           .       3600000.0000   3600000.0000       239.7471      
+supply_constraint.5           .       3600000.0000   3600000.0000       220.2055      
+supply_constraint.6           .       3600000.0000   3600000.0000       200.5366      
+supply_constraint.7           .       3600000.0000   3600000.0000       180.7565      
+supply_constraint.8           .       3600000.0000   3600000.0000       160.8806      
+supply_constraint.9           .       3600000.0000   3600000.0000       140.9232      
+supply_constraint.10          .       3600000.0000   3600000.0000       120.8981      
+supply_constraint.11          .       3600000.0000   3600000.0000       100.8181      
+supply_constraint.12          .       3600000.0000   3600000.0000        80.6954      
+supply_constraint.13          .       3600000.0000   3600000.0000        60.5417      
+supply_constraint.14          .       3600000.0000   3600000.0000        40.3678      
+supply_constraint.15          .       3600000.0000   3600000.0000        20.1840      
+supply_constraint.16          .       1000000.0000   3600000.0000          .          
+supply_constraint.17          .              .       3600000.0000       -20.1750      
+supply_constraint.18          .              .       3600000.0000       -40.3324      
+supply_constraint.19          .              .       3600000.0000       -60.4640      
+supply_constraint.20          .              .       3600000.0000       -80.5622      
+supply_constraint.21          .              .       3600000.0000      -100.6197      
+supply_constraint.22          .              .       3600000.0000      -120.6298      
+supply_constraint.23          .              .       3600000.0000      -140.5860      
+supply_constraint.24          .              .       3600000.0000      -160.4824      
+supply_constraint.25          .              .       3600000.0000      -180.3134      
+supply_constraint.26          .              .       3600000.0000      -200.0736      
+supply_constraint.27          .              .       3600000.0000      -219.7581      
+supply_constraint.28          .              .       3600000.0000      -239.3623      
+supply_constraint.29          .              .       3600000.0000      -258.8818      
+supply_constraint.30          .              .       3600000.0000      -278.3126      
+ev_boom          .1           .              .       3600000.0000      -393.6038      
+ev_boom          .2           .              .       3600000.0000      -365.0279      
+ev_boom          .3           .              .       3600000.0000      -336.5881      
+ev_boom          .4           .              .       3600000.0000      -308.2661      
+ev_boom          .5           .              .       3600000.0000      -280.0446      
+ev_boom          .6           .              .       3600000.0000      -251.9069      
+ev_boom          .7           .              .       3600000.0000      -223.8370      
+ev_boom          .8           .              .       3600000.0000      -195.8196      
+ev_boom          .9           .              .       3600000.0000      -167.8400      
+ev_boom          .10          .              .       3600000.0000      -139.8839      
+ev_boom          .11          .              .       3600000.0000      -111.9379      
+ev_boom          .12          .              .       3600000.0000       -83.9888      
+ev_boom          .13          .              .       3600000.0000       -56.0241      
+ev_boom          .14          .              .       3600000.0000       -28.0317      
+ev_boom          .15          .       1000000.0000   3600000.0000          .          
+ev_boom          .16          .       3600000.0000   3600000.0000        28.0822      
+ev_boom          .17          .       3600000.0000   3600000.0000        56.2257      
+ev_boom          .18          .       3600000.0000   3600000.0000        84.4409      
+ev_boom          .19          .       3600000.0000   3600000.0000       112.7378      
+ev_boom          .20          .       3600000.0000   3600000.0000       141.1262      
+ev_boom          .21          .       3600000.0000   3600000.0000       169.6153      
+ev_boom          .22          .       3600000.0000   3600000.0000       198.2142      
+ev_boom          .23          .       3600000.0000   3600000.0000       226.9317      
+ev_boom          .24          .       3600000.0000   3600000.0000       255.7761      
+ev_boom          .25          .       3600000.0000   3600000.0000       284.7558      
+ev_boom          .26          .       3600000.0000   3600000.0000       313.8785      
+ev_boom          .27          .       3600000.0000   3600000.0000       343.1520      
+ev_boom          .28          .       3600000.0000   3600000.0000       372.5838      
+ev_boom          .29          .       3600000.0000   3600000.0000       402.1811      
+ev_boom          .30          .       3600000.0000   3600000.0000       431.9510      
+
+---- VAR reserve_INA  Indonesian reserves by scenario
+
+                            LOWER          LEVEL          UPPER         MARGINAL
+
+oversupply       .1           .       5.1400000E+7        +INF             .          
+oversupply       .2           .       4.7800000E+7        +INF             .          
+oversupply       .3           .       4.4200000E+7        +INF             .          
+oversupply       .4           .       4.0600000E+7        +INF             .          
+oversupply       .5           .       3.7000000E+7        +INF             .          
+oversupply       .6           .       3.3400000E+7        +INF             .          
+oversupply       .7           .       2.9800000E+7        +INF             .          
+oversupply       .8           .       2.6200000E+7        +INF             .          
+oversupply       .9           .       2.2600000E+7        +INF             .          
+oversupply       .10          .       1.9000000E+7        +INF             .          
+oversupply       .11          .       1.5400000E+7        +INF             .          
+oversupply       .12          .       1.1800000E+7        +INF             .          
+oversupply       .13          .       8200000.0000        +INF             .          
+oversupply       .14          .       4600000.0000        +INF             .          
+oversupply       .15          .       1000000.0000        +INF             .          
+oversupply       .16          .       4.8894435E-9        +INF             .          
+oversupply       .17          .       2.0954758E-9        +INF             .          
+oversupply       .18          .              .            +INF         -225.3784      
+oversupply       .19          .       9.313226E-10        +INF             .          
+oversupply       .20          .              .            +INF         -122.3708      
+oversupply       .21          .              .            +INF             .          
+oversupply       .22          .              .            +INF             .          
+oversupply       .23          .              .            +INF             .          
+oversupply       .24          .              .            +INF             .          
+oversupply       .25          .              .            +INF         -231.0984      
+oversupply       .26          .              .            +INF             .          
+oversupply       .27          .              .            +INF             .          
+oversupply       .28          .              .            +INF             .          
+oversupply       .29          .              .            +INF             .          
+oversupply       .30          .              .            +INF         -443.4025      
+balanced         .1           .       5.1400000E+7        +INF             .          
+balanced         .2           .       4.7800000E+7        +INF             .          
+balanced         .3           .       4.4200000E+7        +INF             .          
+balanced         .4           .       4.0600000E+7        +INF             .          
+balanced         .5           .       3.7000000E+7        +INF             .          
+balanced         .6           .       3.3400000E+7        +INF             .          
+balanced         .7           .       2.9800000E+7        +INF             .          
+balanced         .8           .       2.6200000E+7        +INF             .          
+balanced         .9           .       2.2600000E+7        +INF             .          
+balanced         .10          .       1.9000000E+7        +INF             .          
+balanced         .11          .       1.5400000E+7        +INF             .          
+balanced         .12          .       1.1800000E+7        +INF             .          
+balanced         .13          .       8200000.0000        +INF             .          
+balanced         .14          .       4600000.0000        +INF             .          
+balanced         .15          .       1000000.0000        +INF             .          
+balanced         .16          .       2.3283064E-9        +INF             .          
+balanced         .17          .       1.1641532E-9        +INF             .          
+balanced         .18          .              .            +INF             .          
+balanced         .19          .       9.313226E-10        +INF             .          
+balanced         .20          .              .            +INF         -482.5440      
+balanced         .21          .              .            +INF             .          
+balanced         .22          .              .            +INF             .          
+balanced         .23          .              .            +INF         -259.3995      
+balanced         .24          .              .            +INF             .          
+balanced         .25          .              .            +INF         -161.4345      
+balanced         .26          .              .            +INF             .          
+balanced         .27          .              .            +INF             .          
+balanced         .28          .              .            +INF             .          
+balanced         .29          .              .            +INF             .          
+balanced         .30          .              .            +INF        -2789.3346      
+supply_constraint.1           .       5.1400000E+7        +INF             .          
+supply_constraint.2           .       4.7800000E+7        +INF             .          
+supply_constraint.3           .       4.4200000E+7        +INF             .          
+supply_constraint.4           .       4.0600000E+7        +INF             .          
+supply_constraint.5           .       3.7000000E+7        +INF             .          
+supply_constraint.6           .       3.3400000E+7        +INF             .          
+supply_constraint.7           .       2.9800000E+7        +INF             .          
+supply_constraint.8           .       2.6200000E+7        +INF             .          
+supply_constraint.9           .       2.2600000E+7        +INF             .          
+supply_constraint.10          .       1.9000000E+7        +INF             .          
+supply_constraint.11          .       1.5400000E+7        +INF             .          
+supply_constraint.12          .       1.1800000E+7        +INF             .          
+supply_constraint.13          .       8200000.0000        +INF             .          
+supply_constraint.14          .       4600000.0000        +INF             .          
+supply_constraint.15          .       1000000.0000        +INF             .          
+supply_constraint.16          .       1.1175871E-8        +INF             .          
+supply_constraint.17          .              .            +INF             .          
+supply_constraint.18          .       5.5879354E-9        +INF             .          
+supply_constraint.19          .              .            +INF             .          
+supply_constraint.20          .       2.7939677E-9        +INF             .          
+supply_constraint.21          .       1.8626451E-9        +INF             .          
+supply_constraint.22          .       3.2596290E-9        +INF             .          
+supply_constraint.23          .              .            +INF             .          
+supply_constraint.24          .       1.8626451E-9        +INF             .          
+supply_constraint.25          .              .            +INF             .          
+supply_constraint.26          .              .            +INF             .          
+supply_constraint.27          .              .            +INF             .          
+supply_constraint.28          .              .            +INF             .          
+supply_constraint.29          .              .            +INF             .          
+supply_constraint.30          .              .            +INF        -2503.1893      
+ev_boom          .1           .       5.5000000E+7        +INF             .          
+ev_boom          .2           .       5.5000000E+7        +INF             .          
+ev_boom          .3           .       5.5000000E+7        +INF             .          
+ev_boom          .4           .       5.5000000E+7        +INF             .          
+ev_boom          .5           .       5.5000000E+7        +INF             .          
+ev_boom          .6           .       5.5000000E+7        +INF             .          
+ev_boom          .7           .       5.5000000E+7        +INF             .          
+ev_boom          .8           .       5.5000000E+7        +INF             .          
+ev_boom          .9           .       5.5000000E+7        +INF             .          
+ev_boom          .10          .       5.5000000E+7        +INF             .          
+ev_boom          .11          .       5.5000000E+7        +INF             .          
+ev_boom          .12          .       5.5000000E+7        +INF             .          
+ev_boom          .13          .       5.5000000E+7        +INF             .          
+ev_boom          .14          .       5.5000000E+7        +INF             .          
+ev_boom          .15          .       5.4000000E+7        +INF             .          
+ev_boom          .16          .       5.0400000E+7        +INF             .          
+ev_boom          .17          .       4.6800000E+7        +INF             .          
+ev_boom          .18          .       4.3200000E+7        +INF             .          
+ev_boom          .19          .       3.9600000E+7        +INF             .          
+ev_boom          .20          .       3.6000000E+7        +INF             .          
+ev_boom          .21          .       3.2400000E+7        +INF             .          
+ev_boom          .22          .       2.8800000E+7        +INF             .          
+ev_boom          .23          .       2.5200000E+7        +INF             .          
+ev_boom          .24          .       2.1600000E+7        +INF             .          
+ev_boom          .25          .       1.8000000E+7        +INF             .          
+ev_boom          .26          .       1.4400000E+7        +INF             .          
+ev_boom          .27          .       1.0800000E+7        +INF             .          
+ev_boom          .28          .       7200000.0000        +INF             .          
+ev_boom          .29          .       3600000.0000        +INF             .          
+ev_boom          .30          .              .            +INF        -2494.0703      
+
+---- VAR NPV_INA  Indonesian NPV by scenario
+
+                         LOWER          LEVEL          UPPER         MARGINAL
+
+oversupply               -INF      4.578175E+11        +INF             .          
+balanced                 -INF      6.365759E+11        +INF             .          
+supply_constraint        -INF      7.316042E+11        +INF             .          
+ev_boom                  -INF      9.966121E+11        +INF             .          
+
+                           LOWER          LEVEL          UPPER         MARGINAL
+
+---- VAR expected_~        -INF      6.648974E+11        +INF             .          
+
+  expected_NPV_INA  expected Indonesian NPV
+
+
+**** REPORT SUMMARY :        0     NONOPT
+                             0 INFEASIBLE
+                             0  UNBOUNDED
+                             0     ERRORS
+GAMS 48.6.1  67fbb04b Jan 23, 2025          DAX-DAC arm 64bit/macOS - 11/12/25 00:53:54 Page 13
 G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
 E x e c u t i o n
 
 
-----     94 MODEL hotelling.ModelStat      =        1.000  
+----    173 MODEL hotelling.ModelStat      =        1.000  
             MODEL hotelling.SolveStat      =        1.000  
             VARIABLE NPV.L                 =  1.34334E+11  net present value (USD)
 
-----     94 VARIABLE q.L  quantity of extraction in period t (tonnes)
+----    173 VARIABLE q.L  quantity of extraction in period t (tonnes)
 
 1  594333.333,    2  594333.333,    3  594333.333,    4  594333.333,    5  594333.333,    6  594333.333,    7  594333.333,    8  594333.333,    9  594333.333,    10 594333.333,    11 594333.333,    12 594333.333,    13 594333.333,    14 594333.333,    15 594333.333,    16 594333.333,    17 594333.333,    18 594333.333,    19 594333.333,    20 594333.333,    21 594333.333,    22 594333.333,    23 594333.333,    24 594333.333,    25 594333.333,    26 594333.333,    27 594333.333,    28 594333.333,    29 594333.333,    30 594333.333
 
 
-----     94 VARIABLE reserve.L  remaining reserves by the end of period t (tonnes)
+----    173 VARIABLE reserve.L  remaining reserves by the end of period t (tonnes)
 
 1  1.304457E+8,    2  1.298513E+8,    3  1.292570E+8,    4  1.286627E+8,    5  1.280683E+8,    6  1.274740E+8,    7  1.268797E+8,    8  1.262853E+8,    9  1.256910E+8,    10 1.250967E+8,    11 1.245023E+8,    12 1.239080E+8,    13 1.233137E+8,    14 1.227193E+8,    15 1.221250E+8,    16 1.215307E+8,    17 1.209363E+8,    18 1.203420E+8,    19 1.197477E+8,    20 1.191533E+8,    21 1.185590E+8,    22 1.179647E+8,    23 1.173703E+8,    24 1.167760E+8,    25 1.161817E+8,    26 1.155873E+8,    27 1.149930E+8,    28 1.143987E+8,    29 1.138043E+8,    30 1.132100E+8
 
 
-----     94 PARAMETER cum_extraction  cumulative extraction by period t (tonnes)
+----    173 PARAMETER cum_extraction  cumulative extraction by period t (tonnes)
 
 1   594333.333,    2  1188666.667,    3  1783000.000,    4  2377333.333,    5  2971666.667,    6  3566000.000,    7  4160333.333,    8  4754666.667,    9  5349000.000,    10 5943333.333,    11 6537666.667,    12 7132000.000,    13 7726333.333,    14 8320666.667,    15 8915000.000,    16 9509333.333,    17 1.010367E+7,    18 1.069800E+7,    19 1.129233E+7,    20 1.188667E+7,    21 1.248100E+7,    22 1.307533E+7,    23 1.366967E+7,    24 1.426400E+7,    25 1.485833E+7,    26 1.545267E+7,    27 1.604700E+7,    28 1.664133E+7,    29 1.723567E+7,    30 1.783000E+7
 
 
-----     94 PARAMETER depletion            =       13.607  percentage of reserves depleted (%)
+----    173 PARAMETER depletion            =       13.607  percentage of reserves depleted (%)
+            VARIABLE expected_NPV_INA.L    =  6.64897E+11  expected Indonesian NPV
+
+----    173 VARIABLE NPV_INA.L  Indonesian NPV by scenario
+
+oversupply        4.57818E+11,    balanced          6.36576E+11,    supply_constraint 7.31604E+11,    ev_boom           9.96612E+11
 
 
-EXECUTION TIME       =        0.066 SECONDS      4 MB  48.6.1 67fbb04b DAX-DAC
+----    173 PARAMETER timing_ratio  early vs late extraction ratio
+
+oversupply        1.895,    balanced          1.895,    supply_constraint 1.895
+
+
+----    173 PARAMETER final_price  price in year 30
+
+oversupply         6202.426,    balanced          26643.193,    supply_constraint 46789.471,    ev_boom           81292.670
+
+
+
+EXECUTION TIME       =        0.070 SECONDS      4 MB  48.6.1 67fbb04b DAX-DAC
 
 
 USER: Computational Economics EBGN 645               G250827|0002AO-GEN

@@ -1,0 +1,57 @@
+* NOV 3
+set attributes names of column
+set date /1*123
+
+file in CSV, date, ticker add
+plotting result,
+        elasticity
+        comparing
+rambling on investment, terminal conditions
+
+NLP market models
+    basic
+    utility max
+
+
+formula to code: 
+
+switch, put that
+
+counterfactual
+calibrated contatns elasticity
+
+value demand
+
+scalar ( elasticity)    sw and bin
+reference of demand
+minimizing negatif (maximizing)
+
+market equilibrium, production-price-quatity
+alias operate in the other bin cummluative ammount of consumption
+
+hotelling production per cost, maximum production. Simulation of the price and number of production
+
+
+
+elastic demand, increase, decreased stag. Margin cost.
+
+Nov 5th
+
+Investment model, decision today, future
+lifetime, salvage value.opertaion todaycut the result
+
+#Barr-Manne
+invested capital enough for operarioal tomorrow to survive (technologies, )
+endogenous retirement
+Anwar et al 2023
+        NLP
+        non monotonic
+        multiple variable
+
+calibrated market model
+qd=qs
+put the price, find the market equilibrium
+input price varibale, demand, 
+
+NLP varibale goes to 0 (bad!)
+
