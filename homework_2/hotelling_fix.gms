@@ -76,14 +76,18 @@ price_path(scenario,t) = p0 * power(1 + growth_rate(scenario), ord(t) - 1);
 
 
 *variables
-positive variables
+positive variable
 q(t) 'quantity of extraction in period t (tonnes)'
 reserve(t) 'remaining reserves by the end of period t (tonnes)'
+*Indonesia focus variables
 q_INA(scenario,t) 'Indonesian extraction by scenario'
 reserve_INA(scenario,t) 'Indonesian reserves by scenario'
 ;
 
-free variables
+free variable
+NPV 'net present value (USD)'
+*Indonesia NPV
+free variable
 NPV 'net present value (USD)'
 NPV_INA(scenario) 'Indonesian NPV by scenario'
 expected_NPV_INA 'expected Indonesian NPV'
@@ -188,3 +192,17 @@ execute_unload "indonesia_results.gdx" q_INA, NPV_INA, timing_ratio;
 *PARAMETER depletion            =       13.607  percentage of reserves depleted (%)
 *VAR q  quantity of extraction in period t (tonnes) 594333.3333
 *Time value money 3402.0041 in period 30th
+
+*Indonesian result
+*VARIABLE expected_NPV_INA.L    =  6.64897E+11  expected Indonesian NPV
+*NPV_INA oversupply             =  4.57818E+11
+*NPV_INA balanced               =  6.36576E+11
+*NPV_INA supply_constraint      =  7.31604E+11
+*NPV_INA ev_boom                =  9.96612E+11
+*timing_ratio oversupply        =  1.895
+*timing_ratio balanced          =  1.895
+*timing_ratio supply_constraint =  1.895
+*final_price oversupply         =  6202.426
+*final_price balanced           =  26643.193
+*final_price supply_constraint  =  46789.471
+*final_price ev_boom            =  81292.670
