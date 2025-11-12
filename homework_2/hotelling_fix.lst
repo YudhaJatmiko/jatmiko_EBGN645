@@ -1,4 +1,4 @@
-GAMS 48.6.1  67fbb04b Jan 23, 2025          DAX-DAC arm 64bit/macOS - 11/12/25 01:22:32 Page 1
+GAMS 48.6.1  67fbb04b Jan 23, 2025          DAX-DAC arm 64bit/macOS - 11/12/25 01:30:19 Page 1
 G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
 C o m p i l a t i o n
 
@@ -210,8 +210,8 @@ C o m p i l a t i o n
  205  *final_price ev_boom            =  81292.670
 
 
-COMPILATION TIME     =        0.001 SECONDS      3 MB  48.6.1 67fbb04b DAX-DAC
-GAMS 48.6.1  67fbb04b Jan 23, 2025          DAX-DAC arm 64bit/macOS - 11/12/25 01:22:32 Page 2
+COMPILATION TIME     =        0.002 SECONDS      3 MB  48.6.1 67fbb04b DAX-DAC
+GAMS 48.6.1  67fbb04b Jan 23, 2025          DAX-DAC arm 64bit/macOS - 11/12/25 01:30:19 Page 2
 G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
 E x e c u t i o n
 
@@ -219,7 +219,7 @@ E x e c u t i o n
 ----     46 PARAMETER p0                   =    15003.110  initial nickel price (USD per tonne)
             PARAMETER r0                   =  1.310400E+8  total initial reserves (tonnes)
             PARAMETER q0                   =   297166.667  initial monthly extraction rate (tonnes)
-GAMS 48.6.1  67fbb04b Jan 23, 2025          DAX-DAC arm 64bit/macOS - 11/12/25 01:22:32 Page 3
+GAMS 48.6.1  67fbb04b Jan 23, 2025          DAX-DAC arm 64bit/macOS - 11/12/25 01:30:19 Page 3
 G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
 Equation Listing    SOLVE hotelling Using NLP From line 140
 
@@ -282,7 +282,7 @@ res_bal_INA(oversupply,4)..  q_INA(oversupply,4) - reserve_INA(oversupply,3) + r
      
 REMAINING 113 ENTRIES SKIPPED
 
-GAMS 48.6.1  67fbb04b Jan 23, 2025          DAX-DAC arm 64bit/macOS - 11/12/25 01:22:32 Page 4
+GAMS 48.6.1  67fbb04b Jan 23, 2025          DAX-DAC arm 64bit/macOS - 11/12/25 01:30:19 Page 4
 G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
 Column Listing      SOLVE hotelling Using NLP From line 140
 
@@ -395,7 +395,7 @@ expected_NPV_INA
                 (.LO, .L, .UP, .M = -INF, 0, +INF, 0)
         1       exp_obj_INA
 
-GAMS 48.6.1  67fbb04b Jan 23, 2025          DAX-DAC arm 64bit/macOS - 11/12/25 01:22:32 Page 5
+GAMS 48.6.1  67fbb04b Jan 23, 2025          DAX-DAC arm 64bit/macOS - 11/12/25 01:30:19 Page 5
 G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
 Range Statistics    SOLVE hotelling Using NLP From line 140
 
@@ -406,7 +406,7 @@ RHS       [min, max] : [ 5.500E+07, 1.310E+08] - Zero values observed as well
 Bound     [min, max] : [ 5.943E+05, 3.600E+06] - Zero values observed as well
 Matrix    [min, max] : [ 1.500E-01, 1.951E+04]
 
-GAMS 48.6.1  67fbb04b Jan 23, 2025          DAX-DAC arm 64bit/macOS - 11/12/25 01:22:32 Page 6
+GAMS 48.6.1  67fbb04b Jan 23, 2025          DAX-DAC arm 64bit/macOS - 11/12/25 01:30:19 Page 6
 G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
 Model Statistics    SOLVE hotelling Using NLP From line 140
 
@@ -420,7 +420,7 @@ CODE LENGTH                   0     CONSTANT POOL              16
 
 
 GENERATION TIME      =        0.002 SECONDS      4 MB  48.6.1 67fbb04b DAX-DAC
-GAMS 48.6.1  67fbb04b Jan 23, 2025          DAX-DAC arm 64bit/macOS - 11/12/25 01:22:32 Page 7
+GAMS 48.6.1  67fbb04b Jan 23, 2025          DAX-DAC arm 64bit/macOS - 11/12/25 01:30:19 Page 7
 G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
 Solution Report     SOLVE hotelling Using NLP From line 140
 
@@ -435,7 +435,7 @@ Solution Report     SOLVE hotelling Using NLP From line 140
 **** MODEL STATUS      1 Optimal
 **** OBJECTIVE VALUE     134334327670.3441
 
- RESOURCE USAGE, LIMIT          0.014 10000000000.000
+ RESOURCE USAGE, LIMIT          0.015 10000000000.000
  ITERATION COUNT, LIMIT         1    2147483647
  EVALUATION ERRORS              0             0
  
@@ -996,7 +996,7 @@ ev_boom                  -INF      9.036115E+11        +INF             .
                              0 INFEASIBLE
                              0  UNBOUNDED
                              0     ERRORS
-GAMS 48.6.1  67fbb04b Jan 23, 2025          DAX-DAC arm 64bit/macOS - 11/12/25 01:22:32 Page 8
+GAMS 48.6.1  67fbb04b Jan 23, 2025          DAX-DAC arm 64bit/macOS - 11/12/25 01:30:19 Page 8
 G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
 Equation Listing    SOLVE hotelling_INA Using NLP From line 144
 
@@ -1038,7 +1038,7 @@ res_bal_INA(oversupply,4)..  q_INA(oversupply,4) - reserve_INA(oversupply,3) + r
      
 REMAINING 113 ENTRIES SKIPPED
 
-GAMS 48.6.1  67fbb04b Jan 23, 2025          DAX-DAC arm 64bit/macOS - 11/12/25 01:22:32 Page 9
+GAMS 48.6.1  67fbb04b Jan 23, 2025          DAX-DAC arm 64bit/macOS - 11/12/25 01:30:19 Page 9
 G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
 Column Listing      SOLVE hotelling_INA Using NLP From line 144
 
@@ -1106,7 +1106,7 @@ expected_NPV_INA
                 (.LO, .L, .UP, .M = -INF, 552383568589.431, +INF, 0)
         1       exp_obj_INA
 
-GAMS 48.6.1  67fbb04b Jan 23, 2025          DAX-DAC arm 64bit/macOS - 11/12/25 01:22:32 Page 10
+GAMS 48.6.1  67fbb04b Jan 23, 2025          DAX-DAC arm 64bit/macOS - 11/12/25 01:30:19 Page 10
 G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
 Range Statistics    SOLVE hotelling_INA Using NLP From line 144
 
@@ -1117,7 +1117,7 @@ RHS       [min, max] : [ 5.500E+07, 5.500E+07] - Zero values observed as well
 Bound     [min, max] : [ 3.600E+06, 3.600E+06] - Zero values observed as well
 Matrix    [min, max] : [ 1.500E-01, 1.951E+04]
 
-GAMS 48.6.1  67fbb04b Jan 23, 2025          DAX-DAC arm 64bit/macOS - 11/12/25 01:22:32 Page 11
+GAMS 48.6.1  67fbb04b Jan 23, 2025          DAX-DAC arm 64bit/macOS - 11/12/25 01:30:19 Page 11
 G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
 Model Statistics    SOLVE hotelling_INA Using NLP From line 144
 
@@ -1130,8 +1130,8 @@ NON ZERO ELEMENTS           485     NON LINEAR N-Z              0
 CODE LENGTH                   0     CONSTANT POOL              16
 
 
-GENERATION TIME      =        0.002 SECONDS      4 MB  48.6.1 67fbb04b DAX-DAC
-GAMS 48.6.1  67fbb04b Jan 23, 2025          DAX-DAC arm 64bit/macOS - 11/12/25 01:22:32 Page 12
+GENERATION TIME      =        0.001 SECONDS      4 MB  48.6.1 67fbb04b DAX-DAC
+GAMS 48.6.1  67fbb04b Jan 23, 2025          DAX-DAC arm 64bit/macOS - 11/12/25 01:30:19 Page 12
 G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
 Solution Report     SOLVE hotelling_INA Using NLP From line 144
 
@@ -1588,7 +1588,7 @@ ev_boom                  -INF      9.966121E+11        +INF             .
                              0 INFEASIBLE
                              0  UNBOUNDED
                              0     ERRORS
-GAMS 48.6.1  67fbb04b Jan 23, 2025          DAX-DAC arm 64bit/macOS - 11/12/25 01:22:32 Page 13
+GAMS 48.6.1  67fbb04b Jan 23, 2025          DAX-DAC arm 64bit/macOS - 11/12/25 01:30:19 Page 13
 G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
 E x e c u t i o n
 
@@ -1631,7 +1631,7 @@ oversupply         6202.426,    balanced          26643.193,    supply_constrain
 
 
 
-EXECUTION TIME       =        0.069 SECONDS      4 MB  48.6.1 67fbb04b DAX-DAC
+EXECUTION TIME       =        0.075 SECONDS      4 MB  48.6.1 67fbb04b DAX-DAC
 
 
 USER: Computational Economics EBGN 645               G250827|0002AO-GEN
