@@ -1,0 +1,31 @@
+- GDXReader:
+    file: /Users/yudhajatmiko/Documents/GitHub/jatmiko_EBGN645/homework_2/indonesia_results.gdx
+    symbols: 
+      - name: q_INA
+      - name: NPV_INA
+      - name: timing_ratio
+- Projection:
+    name: q_INA.all(0,1)
+    newName: q_INA_proj_(0,1)
+- Projection:
+    name: NPV_INA.all(0)
+    newName: NPV_INA_proj_(0)
+- ExcelWriter:
+    file: /Users/yudhajatmiko/Documents/GitHub/jatmiko_EBGN645/homework_2/indonesia_results_export.xlsx
+    valueSubstitutions: {
+      EPS: EPS,
+      INF: INF,
+      -INF: -INF,
+      UNDEF: UNDEF,
+      NA: NA
+    }
+    symbols:
+      - name: q_INA_proj_
+        range: q_INA!A1
+        columnDimension: 1
+      - name: NPV_INA_proj_
+        range: NPV_INA!A1
+        columnDimension: 1
+      - name: timing_ratio
+        range: timing_ratio!A1
+        columnDimension: 0

@@ -1,0 +1,202 @@
+- GDXReader:
+    file: /Users/yudhajatmiko/Documents/GitHub/jatmiko_EBGN645/homework_2/result_global.gdx
+    symbols: 
+      - name: t
+      - name: countries
+      - name: scenario
+      - name: prod_reserve
+      - name: p0
+      - name: r0
+      - name: q0
+      - name: c
+      - name: disc_rate
+      - name: disc
+      - name: r0_INA
+      - name: q0_INA
+      - name: growth_rate
+      - name: prob_scenario
+      - name: price_path
+      - name: q
+      - name: reserve
+      - name: q_INA
+      - name: reserve_INA
+      - name: NPV
+      - name: NPV_INA
+      - name: expected_NPV_INA
+      - name: obj
+      - name: res_init
+      - name: res_bal
+      - name: obj_INA
+      - name: exp_obj_INA
+      - name: res_init_INA
+      - name: res_bal_INA
+      - name: t
+      - name: cum_extraction
+      - name: depletion
+      - name: early_extraction_INA
+      - name: late_extraction_INA
+      - name: timing_ratio
+      - name: final_price
+- Projection:
+    name: t(0)
+    newName: t_prev(0)
+- Projection:
+    name: q.all(0)
+    newName: q_proj_(0)
+- Projection:
+    name: reserve.all(0)
+    newName: reserve_proj_(0)
+- Projection:
+    name: q_INA.all(0,1)
+    newName: q_INA_proj_(0,1)
+- Projection:
+    name: reserve_INA.all(0,1)
+    newName: reserve_INA_proj_(0,1)
+- Projection:
+    name: NPV.all
+    newName: NPV_proj_
+- Projection:
+    name: NPV_INA.all(0)
+    newName: NPV_INA_proj_(0)
+- Projection:
+    name: expected_NPV_INA.all
+    newName: expected_NPV_INA_proj_
+- Projection:
+    name: obj.all
+    newName: obj_proj_
+- Projection:
+    name: res_init.all
+    newName: res_init_proj_
+- Projection:
+    name: res_bal.all(0)
+    newName: res_bal_proj_(0)
+- Projection:
+    name: obj_INA.all(0)
+    newName: obj_INA_proj_(0)
+- Projection:
+    name: exp_obj_INA.all
+    newName: exp_obj_INA_proj_
+- Projection:
+    name: res_init_INA.all(0)
+    newName: res_init_INA_proj_(0)
+- Projection:
+    name: res_bal_INA.all(0,1)
+    newName: res_bal_INA_proj_(0,1)
+- ExcelWriter:
+    file: /Users/yudhajatmiko/Documents/GitHub/jatmiko_EBGN645/homework_2/result_global_export.xlsx
+    valueSubstitutions: {
+      EPS: EPS,
+      INF: INF,
+      -INF: -INF,
+      UNDEF: UNDEF,
+      NA: NA
+    }
+    symbols:
+      - name: t
+        range: t!A1
+        columnDimension: 0
+      - name: countries
+        range: countries!A1
+        columnDimension: 0
+      - name: scenario
+        range: scenario!A1
+        columnDimension: 0
+      - name: prod_reserve
+        range: prod_reserve!A1
+        columnDimension: 0
+      - name: p0
+        range: p0!A1
+        columnDimension: 0
+      - name: r0
+        range: r0!A1
+        columnDimension: 0
+      - name: q0
+        range: q0!A1
+        columnDimension: 0
+      - name: c
+        range: c!A1
+        columnDimension: 0
+      - name: disc_rate
+        range: disc_rate!A1
+        columnDimension: 0
+      - name: disc
+        range: disc!A1
+        columnDimension: 0
+      - name: r0_INA
+        range: r0_INA!A1
+        columnDimension: 0
+      - name: q0_INA
+        range: q0_INA!A1
+        columnDimension: 0
+      - name: growth_rate
+        range: growth_rate!A1
+        columnDimension: 0
+      - name: prob_scenario
+        range: prob_scenario!A1
+        columnDimension: 0
+      - name: price_path
+        range: price_path!A1
+        columnDimension: 0
+      - name: q_proj_
+        range: q!A1
+        columnDimension: 1
+      - name: reserve_proj_
+        range: reserve!A1
+        columnDimension: 1
+      - name: q_INA_proj_
+        range: q_INA!A1
+        columnDimension: 1
+      - name: reserve_INA_proj_
+        range: reserve_INA!A1
+        columnDimension: 1
+      - name: NPV_proj_
+        range: NPV!A1
+        columnDimension: 1
+      - name: NPV_INA_proj_
+        range: NPV_INA!A1
+        columnDimension: 1
+      - name: expected_NPV_INA_proj_
+        range: expected_NPV_INA!A1
+        columnDimension: 1
+      - name: obj_proj_
+        range: obj!A1
+        columnDimension: 1
+      - name: res_init_proj_
+        range: res_init!A1
+        columnDimension: 1
+      - name: res_bal_proj_
+        range: res_bal!A1
+        columnDimension: 1
+      - name: obj_INA_proj_
+        range: obj_INA!A1
+        columnDimension: 1
+      - name: exp_obj_INA_proj_
+        range: exp_obj_INA!A1
+        columnDimension: 1
+      - name: res_init_INA_proj_
+        range: res_init_INA!A1
+        columnDimension: 1
+      - name: res_bal_INA_proj_
+        range: res_bal_INA!A1
+        columnDimension: 1
+      - name: t_prev
+        range: t_prev!A1
+        columnDimension: 0
+      - name: cum_extraction
+        range: cum_extraction!A1
+        columnDimension: 0
+      - name: depletion
+        range: depletion!A1
+        columnDimension: 0
+      - name: early_extraction_INA
+        range: early_extraction_INA!A1
+        columnDimension: 0
+      - name: late_extraction_INA
+        range: late_extraction_INA!A1
+        columnDimension: 0
+      - name: timing_ratio
+        range: timing_ratio!A1
+        columnDimension: 0
+      - name: final_price
+        range: final_price!A1
+        columnDimension: 0

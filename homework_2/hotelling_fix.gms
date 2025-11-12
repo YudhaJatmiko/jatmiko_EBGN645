@@ -86,9 +86,6 @@ reserve_INA(scenario,t) 'Indonesian reserves by scenario'
 
 free variable
 NPV 'net present value (USD)'
-*Indonesia NPV
-free variable
-NPV 'net present value (USD)'
 NPV_INA(scenario) 'Indonesian NPV by scenario'
 expected_NPV_INA 'expected Indonesian NPV'
 ;
@@ -184,7 +181,7 @@ final_price
 
 
 *export results
-execute_unload "result.gdx";
+execute_unload "result_global.gdx";
 execute_unload "indonesia_results.gdx" q_INA, NPV_INA, timing_ratio;
 
 *result

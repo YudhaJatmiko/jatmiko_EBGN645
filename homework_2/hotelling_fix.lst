@@ -1,4 +1,4 @@
-GAMS 48.6.1  67fbb04b Jan 23, 2025          DAX-DAC arm 64bit/macOS - 11/12/25 00:53:54 Page 1
+GAMS 48.6.1  67fbb04b Jan 23, 2025          DAX-DAC arm 64bit/macOS - 11/12/25 01:22:32 Page 1
 G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
 C o m p i l a t i o n
 
@@ -81,122 +81,137 @@ C o m p i l a t i o n
   76   
   77   
   78  *variables
-  79  positive variables
+  79  positive variable
   80  q(t) 'quantity of extraction in period t (tonnes)'
   81  reserve(t) 'remaining reserves by the end of period t (tonnes)'
-  82  q_INA(scenario,t) 'Indonesian extraction by scenario'
-  83  reserve_INA(scenario,t) 'Indonesian reserves by scenario'
-  84  ;
-  85   
-  86  free variables
-  87  NPV 'net present value (USD)'
-  88  NPV_INA(scenario) 'Indonesian NPV by scenario'
-  89  expected_NPV_INA 'expected Indonesian NPV'
-  90  ;
-  91   
+  82  *Indonesia focus variables
+  83  q_INA(scenario,t) 'Indonesian extraction by scenario'
+  84  reserve_INA(scenario,t) 'Indonesian reserves by scenario'
+  85  ;
+  86   
+  87  free variable
+  88  NPV 'net present value (USD)'
+  89  NPV_INA(scenario) 'Indonesian NPV by scenario'
+  90  expected_NPV_INA 'expected Indonesian NPV'
+  91  ;
   92   
-  93  *equations
-  94  equations
-  95  obj 'objective function - maximize NPV'
-  96  res_init 'initial reserve constraint'
-  97  res_bal(t) 'reserve balance equation'
-  98  *Indonesia Equations
-  99  obj_INA(scenario) 'Indonesian NPV by scenario'
- 100  exp_obj_INA 'expected Indonesian NPV'
- 101  res_init_INA(scenario) 'Indonesian initial reserves'
- 102  res_bal_INA(scenario,t) 'Indonesian reserve balance'
- 103  ;
- 104   
+  93   
+  94  *equations
+  95  equations
+  96  obj 'objective function - maximize NPV'
+  97  res_init 'initial reserve constraint'
+  98  res_bal(t) 'reserve balance equation'
+  99  *Indonesia Equations
+ 100  obj_INA(scenario) 'Indonesian NPV by scenario'
+ 101  exp_obj_INA 'expected Indonesian NPV'
+ 102  res_init_INA(scenario) 'Indonesian initial reserves'
+ 103  res_bal_INA(scenario,t) 'Indonesian reserve balance'
+ 104  ;
  105   
- 106  *NPV maximization objective function
- 107  obj.. NPV =e= sum(t, disc(t) * (p0 * q(t) - c * q(t)));
- 108   
- 109  *initial reserve constraint
- 110  res_init.. reserve('1') =e= r0 - q('1');
- 111   
- 112  *reserve balance equation
- 113  res_bal(t)$(ord(t) > 1).. reserve(t) =e= reserve(t-1) - q(t);
- 114   
+ 106   
+ 107  *NPV maximization objective function
+ 108  obj.. NPV =e= sum(t, disc(t) * (p0 * q(t) - c * q(t)));
+ 109   
+ 110  *initial reserve constraint
+ 111  res_init.. reserve('1') =e= r0 - q('1');
+ 112   
+ 113  *reserve balance equation
+ 114  res_bal(t)$(ord(t) > 1).. reserve(t) =e= reserve(t-1) - q(t);
  115   
- 116  *Indonesia scenario
- 117  obj_INA(scenario).. NPV_INA(scenario) =e= sum(t, disc(t) * (price_path(scenario,t) - c) * q_INA(scenario,t));
- 118  exp_obj_INA.. expected_NPV_INA =e= sum(scenario, prob_scenario(scenario) * NPV_INA(scenario));
- 119  res_init_INA(scenario).. reserve_INA(scenario,'1') =e= r0_INA - q_INA(scenario,'1');
- 120  res_bal_INA(scenario,t)$(ord(t) > 1).. reserve_INA(scenario,t) =e= reserve_INA(scenario,t-1) - q_INA(scenario,t);
- 121   
+ 116   
+ 117  *Indonesia scenario
+ 118  obj_INA(scenario).. NPV_INA(scenario) =e= sum(t, disc(t) * (price_path(scenario,t) - c) * q_INA(scenario,t));
+ 119  exp_obj_INA.. expected_NPV_INA =e= sum(scenario, prob_scenario(scenario) * NPV_INA(scenario));
+ 120  res_init_INA(scenario).. reserve_INA(scenario,'1') =e= r0_INA - q_INA(scenario,'1');
+ 121  res_bal_INA(scenario,t)$(ord(t) > 1).. reserve_INA(scenario,t) =e= reserve_INA(scenario,t-1) - q_INA(scenario,t);
  122   
- 123  *bounds and initial values
- 124  q.lo(t) = 0;
- 125  q.up(t) = q0 * 2;
- 126  q.l(t) = q0;
- 127  reserve.lo(t) = 0;
- 128  reserve.l(t) = r0 - q0 * ord(t);
- 129   
- 130  *Indonesian bounds
- 131  q_INA.lo(scenario,t) = 0;
- 132  q_INA.up(scenario,t) = q0_INA * 2;
- 133  q_INA.l(scenario,t) = q0_INA;
- 134  reserve_INA.lo(scenario,t) = 0;
- 135  reserve_INA.l(scenario,t) = r0_INA - q0_INA * ord(t);
- 136   
- 137  *solve model
- 138  model hotelling /all/;
- 139  solve hotelling using nlp maximizing NPV;
- 140   
- 141  *solve indonesia model
- 142  model hotelling_INA /obj_INA, exp_obj_INA, res_init_INA, res_bal_INA/;
- 143  solve hotelling_INA using nlp maximizing expected_NPV_INA;
- 144   
- 145  *post-processing calculations
- 146  alias(t, t_prev);
- 147   
- 148  parameter
- 149  cum_extraction(t) 'cumulative extraction by period t (tonnes)'
- 150  depletion 'percentage of reserves depleted (%)'
- 151  ;
- 152   
- 153  *Indonesia analysis
- 154  parameter
- 155  early_extraction_INA(scenario) 'Indonesian extraction years 1-10'
- 156  late_extraction_INA(scenario) 'Indonesian extraction years 11-20'
- 157  timing_ratio(scenario) 'early vs late extraction ratio'
- 158  final_price(scenario) 'price in year 30'
- 159  ;
- 160   
+ 123   
+ 124  *bounds and initial values
+ 125  q.lo(t) = 0;
+ 126  q.up(t) = q0 * 2;
+ 127  q.l(t) = q0;
+ 128  reserve.lo(t) = 0;
+ 129  reserve.l(t) = r0 - q0 * ord(t);
+ 130   
+ 131  *Indonesian bounds
+ 132  q_INA.lo(scenario,t) = 0;
+ 133  q_INA.up(scenario,t) = q0_INA * 2;
+ 134  q_INA.l(scenario,t) = q0_INA;
+ 135  reserve_INA.lo(scenario,t) = 0;
+ 136  reserve_INA.l(scenario,t) = r0_INA - q0_INA * ord(t);
+ 137   
+ 138  *solve model
+ 139  model hotelling /all/;
+ 140  solve hotelling using nlp maximizing NPV;
+ 141   
+ 142  *solve indonesia model
+ 143  model hotelling_INA /obj_INA, exp_obj_INA, res_init_INA, res_bal_INA/;
+ 144  solve hotelling_INA using nlp maximizing expected_NPV_INA;
+ 145   
+ 146  *post-processing calculations
+ 147  alias(t, t_prev);
+ 148   
+ 149  parameter
+ 150  cum_extraction(t) 'cumulative extraction by period t (tonnes)'
+ 151  depletion 'percentage of reserves depleted (%)'
+ 152  ;
+ 153   
+ 154  *Indonesia analysis
+ 155  parameter
+ 156  early_extraction_INA(scenario) 'Indonesian extraction years 1-10'
+ 157  late_extraction_INA(scenario) 'Indonesian extraction years 11-20'
+ 158  timing_ratio(scenario) 'early vs late extraction ratio'
+ 159  final_price(scenario) 'price in year 30'
+ 160  ;
  161   
- 162  cum_extraction(t) = sum(t_prev$(ord(t_prev) <= ord(t)), q.l(t_prev));
- 163  depletion = 100 * sum(t, q.l(t)) / r0;
- 164  *new timing
- 165  early_extraction_INA(scenario) = sum(t$(ord(t) <= 10), q_INA.l(scenario,t));
- 166  late_extraction_INA(scenario) = sum(t$(ord(t) >= 11), q_INA.l(scenario,t));
- 167  timing_ratio(scenario) = early_extraction_INA(scenario) / (late_extraction_INA(scenario) + 0.001);
- 168  final_price(scenario) = price_path(scenario,'30');
- 169   
+ 162   
+ 163  cum_extraction(t) = sum(t_prev$(ord(t_prev) <= ord(t)), q.l(t_prev));
+ 164  depletion = 100 * sum(t, q.l(t)) / r0;
+ 165  *new timing
+ 166  early_extraction_INA(scenario) = sum(t$(ord(t) <= 10), q_INA.l(scenario,t));
+ 167  late_extraction_INA(scenario) = sum(t$(ord(t) >= 11), q_INA.l(scenario,t));
+ 168  timing_ratio(scenario) = early_extraction_INA(scenario) / (late_extraction_INA(scenario) + 0.001);
+ 169  final_price(scenario) = price_path(scenario,'30');
  170   
- 171  *display results
- 172  display
- 173  hotelling.modelstat, hotelling.solvestat,
- 174  NPV.l, q.l, reserve.l, cum_extraction, depletion,
- 175  expected_NPV_INA.l,
- 176  NPV_INA.l,
- 177  timing_ratio,
- 178  final_price
- 179  ;
- 180   
+ 171   
+ 172  *display results
+ 173  display
+ 174  hotelling.modelstat, hotelling.solvestat,
+ 175  NPV.l, q.l, reserve.l, cum_extraction, depletion,
+ 176  expected_NPV_INA.l,
+ 177  NPV_INA.l,
+ 178  timing_ratio,
+ 179  final_price
+ 180  ;
  181   
- 182  *export results
- 183  execute_unload "result.gdx";
- 184  execute_unload "indonesia_results.gdx" q_INA, NPV_INA, timing_ratio;
- 185   
- 186  *result
- 187  *VARIABLE NPV.L                 =  1.34334E+11  net present value (USD)
- 188  *PARAMETER depletion            =       13.607  percentage of reserves depleted (%)
- 189  *VAR q  quantity of extraction in period t (tonnes) 594333.3333
- 190  *Time value money 3402.0041 in period 30th
+ 182   
+ 183  *export results
+ 184  execute_unload "result_global.gdx";
+ 185  execute_unload "indonesia_results.gdx" q_INA, NPV_INA, timing_ratio;
+ 186   
+ 187  *result
+ 188  *VARIABLE NPV.L                 =  1.34334E+11  net present value (USD)
+ 189  *PARAMETER depletion            =       13.607  percentage of reserves depleted (%)
+ 190  *VAR q  quantity of extraction in period t (tonnes) 594333.3333
+ 191  *Time value money 3402.0041 in period 30th
+ 192   
+ 193  *Indonesian result
+ 194  *VARIABLE expected_NPV_INA.L    =  6.64897E+11  expected Indonesian NPV
+ 195  *NPV_INA oversupply             =  4.57818E+11
+ 196  *NPV_INA balanced               =  6.36576E+11
+ 197  *NPV_INA supply_constraint      =  7.31604E+11
+ 198  *NPV_INA ev_boom                =  9.96612E+11
+ 199  *timing_ratio oversupply        =  1.895
+ 200  *timing_ratio balanced          =  1.895
+ 201  *timing_ratio supply_constraint =  1.895
+ 202  *final_price oversupply         =  6202.426
+ 203  *final_price balanced           =  26643.193
+ 204  *final_price supply_constraint  =  46789.471
+ 205  *final_price ev_boom            =  81292.670
 
 
 COMPILATION TIME     =        0.001 SECONDS      3 MB  48.6.1 67fbb04b DAX-DAC
-GAMS 48.6.1  67fbb04b Jan 23, 2025          DAX-DAC arm 64bit/macOS - 11/12/25 00:53:54 Page 2
+GAMS 48.6.1  67fbb04b Jan 23, 2025          DAX-DAC arm 64bit/macOS - 11/12/25 01:22:32 Page 2
 G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
 E x e c u t i o n
 
@@ -204,9 +219,9 @@ E x e c u t i o n
 ----     46 PARAMETER p0                   =    15003.110  initial nickel price (USD per tonne)
             PARAMETER r0                   =  1.310400E+8  total initial reserves (tonnes)
             PARAMETER q0                   =   297166.667  initial monthly extraction rate (tonnes)
-GAMS 48.6.1  67fbb04b Jan 23, 2025          DAX-DAC arm 64bit/macOS - 11/12/25 00:53:54 Page 3
+GAMS 48.6.1  67fbb04b Jan 23, 2025          DAX-DAC arm 64bit/macOS - 11/12/25 01:22:32 Page 3
 G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
-Equation Listing    SOLVE hotelling Using NLP From line 139
+Equation Listing    SOLVE hotelling Using NLP From line 140
 
 
 ---- obj  =E=  objective function - maximize NPV
@@ -267,9 +282,9 @@ res_bal_INA(oversupply,4)..  q_INA(oversupply,4) - reserve_INA(oversupply,3) + r
      
 REMAINING 113 ENTRIES SKIPPED
 
-GAMS 48.6.1  67fbb04b Jan 23, 2025          DAX-DAC arm 64bit/macOS - 11/12/25 00:53:54 Page 4
+GAMS 48.6.1  67fbb04b Jan 23, 2025          DAX-DAC arm 64bit/macOS - 11/12/25 01:22:32 Page 4
 G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
-Column Listing      SOLVE hotelling Using NLP From line 139
+Column Listing      SOLVE hotelling Using NLP From line 140
 
 
 ---- q  quantity of extraction in period t (tonnes)
@@ -380,9 +395,9 @@ expected_NPV_INA
                 (.LO, .L, .UP, .M = -INF, 0, +INF, 0)
         1       exp_obj_INA
 
-GAMS 48.6.1  67fbb04b Jan 23, 2025          DAX-DAC arm 64bit/macOS - 11/12/25 00:53:54 Page 5
+GAMS 48.6.1  67fbb04b Jan 23, 2025          DAX-DAC arm 64bit/macOS - 11/12/25 01:22:32 Page 5
 G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
-Range Statistics    SOLVE hotelling Using NLP From line 139
+Range Statistics    SOLVE hotelling Using NLP From line 140
 
 
 RANGE STATISTICS (ABSOLUTE NON-ZERO FINITE VALUES)
@@ -391,9 +406,9 @@ RHS       [min, max] : [ 5.500E+07, 1.310E+08] - Zero values observed as well
 Bound     [min, max] : [ 5.943E+05, 3.600E+06] - Zero values observed as well
 Matrix    [min, max] : [ 1.500E-01, 1.951E+04]
 
-GAMS 48.6.1  67fbb04b Jan 23, 2025          DAX-DAC arm 64bit/macOS - 11/12/25 00:53:54 Page 6
+GAMS 48.6.1  67fbb04b Jan 23, 2025          DAX-DAC arm 64bit/macOS - 11/12/25 01:22:32 Page 6
 G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
-Model Statistics    SOLVE hotelling Using NLP From line 139
+Model Statistics    SOLVE hotelling Using NLP From line 140
 
 
 MODEL STATISTICS
@@ -405,22 +420,22 @@ CODE LENGTH                   0     CONSTANT POOL              16
 
 
 GENERATION TIME      =        0.002 SECONDS      4 MB  48.6.1 67fbb04b DAX-DAC
-GAMS 48.6.1  67fbb04b Jan 23, 2025          DAX-DAC arm 64bit/macOS - 11/12/25 00:53:54 Page 7
+GAMS 48.6.1  67fbb04b Jan 23, 2025          DAX-DAC arm 64bit/macOS - 11/12/25 01:22:32 Page 7
 G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
-Solution Report     SOLVE hotelling Using NLP From line 139
+Solution Report     SOLVE hotelling Using NLP From line 140
 
 
                S O L V E      S U M M A R Y
 
      MODEL   hotelling           OBJECTIVE  NPV
      TYPE    NLP                 DIRECTION  MAXIMIZE
-     SOLVER  CONOPT              FROM LINE  139
+     SOLVER  CONOPT              FROM LINE  140
 
 **** SOLVER STATUS     1 Normal Completion
 **** MODEL STATUS      1 Optimal
 **** OBJECTIVE VALUE     134334327670.3441
 
- RESOURCE USAGE, LIMIT          0.015 10000000000.000
+ RESOURCE USAGE, LIMIT          0.014 10000000000.000
  ITERATION COUNT, LIMIT         1    2147483647
  EVALUATION ERRORS              0             0
  
@@ -981,9 +996,9 @@ ev_boom                  -INF      9.036115E+11        +INF             .
                              0 INFEASIBLE
                              0  UNBOUNDED
                              0     ERRORS
-GAMS 48.6.1  67fbb04b Jan 23, 2025          DAX-DAC arm 64bit/macOS - 11/12/25 00:53:54 Page 8
+GAMS 48.6.1  67fbb04b Jan 23, 2025          DAX-DAC arm 64bit/macOS - 11/12/25 01:22:32 Page 8
 G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
-Equation Listing    SOLVE hotelling_INA Using NLP From line 143
+Equation Listing    SOLVE hotelling_INA Using NLP From line 144
 
 
 ---- obj_INA  =E=  Indonesian NPV by scenario
@@ -1023,9 +1038,9 @@ res_bal_INA(oversupply,4)..  q_INA(oversupply,4) - reserve_INA(oversupply,3) + r
      
 REMAINING 113 ENTRIES SKIPPED
 
-GAMS 48.6.1  67fbb04b Jan 23, 2025          DAX-DAC arm 64bit/macOS - 11/12/25 00:53:54 Page 9
+GAMS 48.6.1  67fbb04b Jan 23, 2025          DAX-DAC arm 64bit/macOS - 11/12/25 01:22:32 Page 9
 G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
-Column Listing      SOLVE hotelling_INA Using NLP From line 143
+Column Listing      SOLVE hotelling_INA Using NLP From line 144
 
 
 ---- q_INA  Indonesian extraction by scenario
@@ -1091,9 +1106,9 @@ expected_NPV_INA
                 (.LO, .L, .UP, .M = -INF, 552383568589.431, +INF, 0)
         1       exp_obj_INA
 
-GAMS 48.6.1  67fbb04b Jan 23, 2025          DAX-DAC arm 64bit/macOS - 11/12/25 00:53:54 Page 10
+GAMS 48.6.1  67fbb04b Jan 23, 2025          DAX-DAC arm 64bit/macOS - 11/12/25 01:22:32 Page 10
 G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
-Range Statistics    SOLVE hotelling_INA Using NLP From line 143
+Range Statistics    SOLVE hotelling_INA Using NLP From line 144
 
 
 RANGE STATISTICS (ABSOLUTE NON-ZERO FINITE VALUES)
@@ -1102,9 +1117,9 @@ RHS       [min, max] : [ 5.500E+07, 5.500E+07] - Zero values observed as well
 Bound     [min, max] : [ 3.600E+06, 3.600E+06] - Zero values observed as well
 Matrix    [min, max] : [ 1.500E-01, 1.951E+04]
 
-GAMS 48.6.1  67fbb04b Jan 23, 2025          DAX-DAC arm 64bit/macOS - 11/12/25 00:53:54 Page 11
+GAMS 48.6.1  67fbb04b Jan 23, 2025          DAX-DAC arm 64bit/macOS - 11/12/25 01:22:32 Page 11
 G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
-Model Statistics    SOLVE hotelling_INA Using NLP From line 143
+Model Statistics    SOLVE hotelling_INA Using NLP From line 144
 
 
 MODEL STATISTICS
@@ -1115,17 +1130,17 @@ NON ZERO ELEMENTS           485     NON LINEAR N-Z              0
 CODE LENGTH                   0     CONSTANT POOL              16
 
 
-GENERATION TIME      =        0.001 SECONDS      4 MB  48.6.1 67fbb04b DAX-DAC
-GAMS 48.6.1  67fbb04b Jan 23, 2025          DAX-DAC arm 64bit/macOS - 11/12/25 00:53:54 Page 12
+GENERATION TIME      =        0.002 SECONDS      4 MB  48.6.1 67fbb04b DAX-DAC
+GAMS 48.6.1  67fbb04b Jan 23, 2025          DAX-DAC arm 64bit/macOS - 11/12/25 01:22:32 Page 12
 G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
-Solution Report     SOLVE hotelling_INA Using NLP From line 143
+Solution Report     SOLVE hotelling_INA Using NLP From line 144
 
 
                S O L V E      S U M M A R Y
 
      MODEL   hotelling_INA       OBJECTIVE  expected_NPV_INA
      TYPE    NLP                 DIRECTION  MAXIMIZE
-     SOLVER  CONOPT              FROM LINE  143
+     SOLVER  CONOPT              FROM LINE  144
 
 **** SOLVER STATUS     1 Normal Completion
 **** MODEL STATUS      1 Optimal
@@ -1153,7 +1168,7 @@ Solution Report     SOLVE hotelling_INA Using NLP From line 143
  ** Optimal solution. There are no superbasic variables.
  
  
- CONOPT time Total                            0.002 seconds
+ CONOPT time Total                            0.001 seconds
    of which: Function evaluations             0.000 =  0.0%
              1st Derivative evaluations       0.000 =  0.0%
  
@@ -1573,50 +1588,50 @@ ev_boom                  -INF      9.966121E+11        +INF             .
                              0 INFEASIBLE
                              0  UNBOUNDED
                              0     ERRORS
-GAMS 48.6.1  67fbb04b Jan 23, 2025          DAX-DAC arm 64bit/macOS - 11/12/25 00:53:54 Page 13
+GAMS 48.6.1  67fbb04b Jan 23, 2025          DAX-DAC arm 64bit/macOS - 11/12/25 01:22:32 Page 13
 G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
 E x e c u t i o n
 
 
-----    173 MODEL hotelling.ModelStat      =        1.000  
+----    174 MODEL hotelling.ModelStat      =        1.000  
             MODEL hotelling.SolveStat      =        1.000  
             VARIABLE NPV.L                 =  1.34334E+11  net present value (USD)
 
-----    173 VARIABLE q.L  quantity of extraction in period t (tonnes)
+----    174 VARIABLE q.L  quantity of extraction in period t (tonnes)
 
 1  594333.333,    2  594333.333,    3  594333.333,    4  594333.333,    5  594333.333,    6  594333.333,    7  594333.333,    8  594333.333,    9  594333.333,    10 594333.333,    11 594333.333,    12 594333.333,    13 594333.333,    14 594333.333,    15 594333.333,    16 594333.333,    17 594333.333,    18 594333.333,    19 594333.333,    20 594333.333,    21 594333.333,    22 594333.333,    23 594333.333,    24 594333.333,    25 594333.333,    26 594333.333,    27 594333.333,    28 594333.333,    29 594333.333,    30 594333.333
 
 
-----    173 VARIABLE reserve.L  remaining reserves by the end of period t (tonnes)
+----    174 VARIABLE reserve.L  remaining reserves by the end of period t (tonnes)
 
 1  1.304457E+8,    2  1.298513E+8,    3  1.292570E+8,    4  1.286627E+8,    5  1.280683E+8,    6  1.274740E+8,    7  1.268797E+8,    8  1.262853E+8,    9  1.256910E+8,    10 1.250967E+8,    11 1.245023E+8,    12 1.239080E+8,    13 1.233137E+8,    14 1.227193E+8,    15 1.221250E+8,    16 1.215307E+8,    17 1.209363E+8,    18 1.203420E+8,    19 1.197477E+8,    20 1.191533E+8,    21 1.185590E+8,    22 1.179647E+8,    23 1.173703E+8,    24 1.167760E+8,    25 1.161817E+8,    26 1.155873E+8,    27 1.149930E+8,    28 1.143987E+8,    29 1.138043E+8,    30 1.132100E+8
 
 
-----    173 PARAMETER cum_extraction  cumulative extraction by period t (tonnes)
+----    174 PARAMETER cum_extraction  cumulative extraction by period t (tonnes)
 
 1   594333.333,    2  1188666.667,    3  1783000.000,    4  2377333.333,    5  2971666.667,    6  3566000.000,    7  4160333.333,    8  4754666.667,    9  5349000.000,    10 5943333.333,    11 6537666.667,    12 7132000.000,    13 7726333.333,    14 8320666.667,    15 8915000.000,    16 9509333.333,    17 1.010367E+7,    18 1.069800E+7,    19 1.129233E+7,    20 1.188667E+7,    21 1.248100E+7,    22 1.307533E+7,    23 1.366967E+7,    24 1.426400E+7,    25 1.485833E+7,    26 1.545267E+7,    27 1.604700E+7,    28 1.664133E+7,    29 1.723567E+7,    30 1.783000E+7
 
 
-----    173 PARAMETER depletion            =       13.607  percentage of reserves depleted (%)
+----    174 PARAMETER depletion            =       13.607  percentage of reserves depleted (%)
             VARIABLE expected_NPV_INA.L    =  6.64897E+11  expected Indonesian NPV
 
-----    173 VARIABLE NPV_INA.L  Indonesian NPV by scenario
+----    174 VARIABLE NPV_INA.L  Indonesian NPV by scenario
 
 oversupply        4.57818E+11,    balanced          6.36576E+11,    supply_constraint 7.31604E+11,    ev_boom           9.96612E+11
 
 
-----    173 PARAMETER timing_ratio  early vs late extraction ratio
+----    174 PARAMETER timing_ratio  early vs late extraction ratio
 
 oversupply        1.895,    balanced          1.895,    supply_constraint 1.895
 
 
-----    173 PARAMETER final_price  price in year 30
+----    174 PARAMETER final_price  price in year 30
 
 oversupply         6202.426,    balanced          26643.193,    supply_constraint 46789.471,    ev_boom           81292.670
 
 
 
-EXECUTION TIME       =        0.070 SECONDS      4 MB  48.6.1 67fbb04b DAX-DAC
+EXECUTION TIME       =        0.069 SECONDS      4 MB  48.6.1 67fbb04b DAX-DAC
 
 
 USER: Computational Economics EBGN 645               G250827|0002AO-GEN
